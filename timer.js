@@ -1,7 +1,7 @@
 (() => {
-    var timeDisplay;
+    var timeDisplay;  // todo change to pTime or something
     var fieldDuration;
-    var timer_start;
+    var buttonStartPause;
     var pTimer;
 
     var timer = {
@@ -14,11 +14,11 @@
     function init() {
         timeDisplay = document.getElementById('time-display');
         fieldDuration = document.getElementById('field-duration');
-        timer_start = document.getElementById('timer-start');
+        buttonStartPause = document.getElementById('button-start-pause');
         pTimer = document.getElementById('p-timer');
 
         fieldDuration.addEventListener('keypress', onDurationKey);
-        timer_start.addEventListener('click', startTimer);
+        buttonStartPause.addEventListener('click', startPause);
         
         setTimeout(update, 500);
     }
@@ -30,8 +30,8 @@
                 timer.timeLeft = 0;
                 timer.running = false;
                 timer.shouldRing = true;
+                buttonStartPause.value = "Start";
             }
-
         }
     }
 
@@ -54,12 +54,22 @@
         //console.log('Key pressed in duration input!');
     }
 
-    function startTimer() {
-        console.log('Timer start button pressed!');
-        timer.timeLeft = parseInt(fieldDuration.value);
-        var offsetMilli = 1000 * timer.timeLeft;
-        timer.endTime = Date.now() + offsetMilli;
-        timer.running = true;
+    function startPause() {
+        if (buttonStartPause.value === "Start") {
+            timer.timeLeft = parseInt(fieldDuration.value);
+            var offsetMilli = 1000 * timer.timeLeft;
+            timer.endTime = Date.now() + offsetMilli;
+            timer.running = true;
+
+            buttonStartPause.value = "Stop";
+
+            updateDisplay();
+        } else if (buttonStartPause.value === "Stop") {
+            updateTimer();
+            timer.running = false;
+
+            buttonStartPause.value = "Start";
+        }
     }
 
     window.addEventListener('load', init, false);
