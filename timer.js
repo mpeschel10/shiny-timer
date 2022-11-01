@@ -1,5 +1,5 @@
 (() => {
-    var timer_display;
+    var timeDisplay;
     var timer_duration;
     var timer_start;
 
@@ -8,7 +8,7 @@
     };
 
     function init() {
-        timer_display = document.getElementById('timer-display');
+        timeDisplay = document.getElementById('time-display');
         timer_duration = document.getElementById('timer-duration');
         timer_start = document.getElementById('timer-start');
 
@@ -27,7 +27,7 @@
     }
 
     function updateDisplay() {
-        timer_display.innerHTML = Date();
+        timeDisplay.innerHTML = Date();
     }
 
     function update() {
