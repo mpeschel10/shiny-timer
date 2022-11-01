@@ -5,7 +5,10 @@
     var pTimer;
 
     var timer = {
-        endTime: null
+        endTime: null,
+        timeLeft: 0,
+        running: false,
+        shouldRing: false
     };
 
     function init() {
@@ -21,13 +24,24 @@
     }
 
     function updateTimer() {
-        if (timer.endTime !== null) {
-           pTimer.innerHTML = (timer.endTime - Date.now()) / 1000;
+        if (timer.running) {
+            timer.timeLeft = (timer.endTime - Date.now()) / 1000;
+            if (timer.timeLeft < 0) {
+                timer.timeLeft = 0;
+                timer.running = false;
+                timer.shouldRing = true;
+            }
+
         }
     }
 
     function updateDisplay() {
         timeDisplay.innerHTML = Date();
+        pTimer.innerHTML = timer.timeLeft;
+        if (timer.shouldRing) {
+            console.log('Ring the bell!');
+            timer.shouldRing = false;
+        }
     }
 
     function update() {
@@ -42,8 +56,10 @@
 
     function startTimer() {
         console.log('Timer start button pressed!');
-        var offsetMilli = 1000 * parseInt(fieldDuration.value);
+        timer.timeLeft = parseInt(fieldDuration.value);
+        var offsetMilli = 1000 * timer.timeLeft;
         timer.endTime = Date.now() + offsetMilli;
+        timer.running = true;
     }
 
     window.addEventListener('load', init, false);
