@@ -3,6 +3,10 @@
     var timer_duration;
     var timer_start;
 
+    var timer = {
+        endTime: null
+    };
+
     function init() {
         timer_display = document.getElementById('timer-display');
         timer_duration = document.getElementById('timer-duration');
@@ -14,17 +18,31 @@
         setTimeout(update, 500);
     }
 
-    function update() {
+    function updateTimer() {
+        if (timer.endTime === null) {
+            console.log('No timer update');
+        } else {
+            console.log('Timer update');
+        }
+    }
+
+    function updateDisplay() {
         timer_display.innerHTML = Date();
+    }
+
+    function update() {
+        updateTimer();
+        updateDisplay();
         setTimeout(update, 500);
     }
 
     function onDurationKey() {
-        console.log('Key pressed in duration input!');
+        //console.log('Key pressed in duration input!');
     }
 
     function startTimer() {
         console.log('Timer start button pressed!');
+        timer.endTime = 12;
     }
 
     window.addEventListener('load', init, false);
