@@ -1,7 +1,8 @@
 (() => {
     var timeDisplay;
-    var timer_duration;
+    var fieldDuration;
     var timer_start;
+    var pTimer;
 
     var timer = {
         endTime: null
@@ -9,20 +10,19 @@
 
     function init() {
         timeDisplay = document.getElementById('time-display');
-        timer_duration = document.getElementById('timer-duration');
+        fieldDuration = document.getElementById('field-duration');
         timer_start = document.getElementById('timer-start');
+        pTimer = document.getElementById('p-timer');
 
-        timer_duration.addEventListener('keypress', onDurationKey);
+        fieldDuration.addEventListener('keypress', onDurationKey);
         timer_start.addEventListener('click', startTimer);
         
         setTimeout(update, 500);
     }
 
     function updateTimer() {
-        if (timer.endTime === null) {
-            console.log('No timer update');
-        } else {
-            console.log('Timer update');
+        if (timer.endTime !== null) {
+           pTimer.innerHTML = (timer.endTime - Date.now()) / 1000;
         }
     }
 
@@ -42,7 +42,8 @@
 
     function startTimer() {
         console.log('Timer start button pressed!');
-        timer.endTime = 12;
+        var offsetMilli = 1000 * parseInt(fieldDuration.value);
+        timer.endTime = Date.now() + offsetMilli;
     }
 
     window.addEventListener('load', init, false);
