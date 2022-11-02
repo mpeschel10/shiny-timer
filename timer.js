@@ -31,6 +31,7 @@
                 timer.running = false;
                 timer.shouldRing = true;
                 buttonStartPause.value = "Start";
+                timer.endTime = null;
             }
         }
     }
@@ -56,11 +57,13 @@
 
     function startPause() {
         if (buttonStartPause.value === "Start") {
-            timer.timeLeft = parseInt(fieldDuration.value);
-            var offsetMilli = 1000 * timer.timeLeft;
-            timer.endTime = Date.now() + offsetMilli;
-            timer.running = true;
+            if (timer.endTime === null) {
+                timer.timeLeft = parseInt(fieldDuration.value);
+                var offsetMilli = 1000 * timer.timeLeft;
+                timer.endTime = Date.now() + offsetMilli;
+            }
 
+            timer.running = true;
             buttonStartPause.value = "Stop";
 
             updateDisplay();
