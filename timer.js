@@ -59,9 +59,10 @@
         if (buttonStartPause.value === "Start") {
             if (timer.endTime === null) {
                 timer.timeLeft = parseInt(fieldDuration.value);
-                var offsetMilli = 1000 * timer.timeLeft;
-                timer.endTime = Date.now() + offsetMilli;
             }
+
+            var offsetMilli = 1000 * timer.timeLeft;
+            timer.endTime = Date.now() + offsetMilli;
 
             timer.running = true;
             buttonStartPause.value = "Stop";
