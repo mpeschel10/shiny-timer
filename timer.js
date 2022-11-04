@@ -28,21 +28,10 @@
         fieldDuration.addEventListener('keypress', onDurationKey);
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
-        buttonTest.addEventListener('click', onTest);
 
         audioCrickets.loop = true;
 
         setTimeout(update, 500);
-    }
-
-    function onTest() {
-        if (audioCrickets.paused) {
-            console.log("Playing audio now!");
-            audioCrickets.play();
-        } else {
-            console.log("Pausing audio now!");
-            audioCrickets.pause();
-        }
     }
 
     function updateTimer() {
@@ -63,6 +52,9 @@
         pTimer.innerHTML = timer.timeLeft;
         if (timer.shouldRing) {
             console.log('Ring the bell!');
+            if (audioCrickets.paused) {
+                audioCrickets.play();
+            }
             timer.shouldRing = false;
         }
     }
@@ -81,6 +73,7 @@
         timer = makeTimer();
         timer.timeLeft = parseInt(fieldDuration.value);
         buttonStartPause.value = "Start";
+        audioCrickets.pause();
     }
 
     function startPause() {
@@ -104,9 +97,15 @@
         } else if (buttonStartPause.value === "Ok") {
             timer.running = false; // Should be redundant
             timer.shouldRing = false;
+            audioCrickets.pause();
         }
     }
 
     window.addEventListener('load', init, false);
 })()
+
+
+
+
+
 
