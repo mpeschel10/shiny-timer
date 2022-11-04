@@ -1,7 +1,7 @@
 (() => {
     var timeDisplay;  // todo change to pTime or something
     var fieldDuration;
-    var buttonStartPause; var buttonReset;
+    var buttonStartPause; var buttonReset; var buttonTest;
     var pTimer;
 
     var timer;
@@ -15,18 +15,34 @@
     }
     timer = makeTimer();
 
+    var audioCrickets = new Audio('crickets.ogg');
+
     function init() {
         timeDisplay = document.getElementById('time-display');
         fieldDuration = document.getElementById('field-duration');
         buttonStartPause = document.getElementById('button-start-pause');
         buttonReset = document.getElementById('button-reset');
+        buttonTest = document.getElementById('button-test');
         pTimer = document.getElementById('p-timer');
 
         fieldDuration.addEventListener('keypress', onDurationKey);
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
-        
+        buttonTest.addEventListener('click', onTest);
+
+        audioCrickets.loop = true;
+
         setTimeout(update, 500);
+    }
+
+    function onTest() {
+        if (audioCrickets.paused) {
+            console.log("Playing audio now!");
+            audioCrickets.play();
+        } else {
+            console.log("Pausing audio now!");
+            audioCrickets.pause();
+        }
     }
 
     function updateTimer() {
