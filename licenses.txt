@@ -1,2 +1,43 @@
 media:
-Crickets.ogg derived from Crickets.wav by "TheGoodstuff2048" via freesound.org; url https://freesound.org/people/TheGoodstuff2048/sounds/656116/ under CCC 4.0 attribution license. https://creativecommons.org/licenses/by/4.0/
+
+Crickets:
+crickets.ogg
+Released under same license as original (I did not make substantive changes)
+Derived from:
+https://freesound.org/people/TheGoodstuff2048/sounds/656116/
+"crickets.wav" by "TheGoodstuff2048" of Freesound.org
+Under CC 4.0 attribution license: https://creativecommons.org/licenses/by/4.0/
+
+Car alarm:
+car-alarm.ogg
+Released under same license as original (I did not make substantive changes)
+Derived from:
+https://freesound.org/people/InspectorJ/sounds/422051/
+"car-alarm-distant-a.wav" by "InspectorJ" (www.jshaw.co.uk) of Freesound.org
+Under CC 4.0 attribution license: https://creativecommons.org/licenses/by/4.0/
+
+Alarm:
+bbbbeep.ogg
+Released under same license as original (I did not make substantive changes)
+Derived from:
+https://freesound.org/people/ZyryTSounds/sounds/219242/
+"alarm-clock.wav" by "ZyryTSounds" of Freesound.org
+Under CC 0 license: http://creativecommons.org/publicdomain/zero/1.0/
+
+Slow bell:
+slow-bell.ogg
+Released under same license as original (I did not make substantive changes)
+Derived from:
+https://freesound.org/people/HMTSCCSound/sounds/554655/
+"bec-low-bell-solo.wav" by "HMTSCCSound" of Freesound.org
+Under CC 0 license: http://creativecommons.org/publicdomain/zero/1.0/
+
+Church bells:
+chruch-bells.ogg
+Released under same license as original (I did not make substantive changes)
+Derived from:
+https://freesound.org/people/titi2/sounds/567525/
+"church-bells-210410-0065.wav" by "titi2" of Freesound.org
+Under CC 0 license: http://creativecommons.org/publicdomain/zero/1.0/
+
+
