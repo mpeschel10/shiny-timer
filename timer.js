@@ -15,7 +15,7 @@
     }
     timer = makeTimer();
 
-    var audioCrickets = new Audio('crickets.ogg');
+    var audioCrickets = new Audio('sounds/crickets.ogg');
 
     function init() {
         timeDisplay = document.getElementById('time-display');
