@@ -3,6 +3,7 @@
     var fieldDuration;
     var buttonStartPause; var buttonReset; var buttonTest;
     var pTimer;
+    var comboSounds;
 
     var timer;
     function makeTimer() {
@@ -15,7 +16,21 @@
     }
     timer = makeTimer();
 
-    var audioCrickets = new Audio('sounds/crickets.ogg');
+    var soundPaths = [
+        'bbbbeep-loop.ogg',
+        'church-bells-loop.ogg',
+        'slow-bell-loop.ogg',
+        'crickets-loop.ogg',
+        'car-alarm-loop.ogg'
+    ]
+
+    var sounds = {}
+    for (const path of soundPaths)
+    {
+        sounds[path] = new Audio("sounds/" + path);
+        sounds[path].loop = true;
+    }
+    var currentSound = sounds[soundPaths[0]];
 
     function init() {
         timeDisplay = document.getElementById('time-display');
@@ -24,13 +39,14 @@
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
         pTimer = document.getElementById('p-timer');
+        comboSounds = document.getElementById('combo-sounds');
 
         fieldDuration.addEventListener('keypress', onDurationKey);
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
+        comboSounds.addEventListener('change', updateCurrentSound);
 
-        audioCrickets.loop = true;
-
+        updateCurrentSound();
         setTimeout(update, 500);
     }
 
@@ -52,10 +68,10 @@
         pTimer.innerHTML = timer.timeLeft;
         if (timer.shouldRing) {
             console.log('Ring the bell!');
-            if (audioCrickets.paused) {
-                audioCrickets.play();
-            }
             timer.shouldRing = false;
+            if (currentSound.paused) {
+                currentSound.play(); // play may fail if the source doesn't load, but the exception will happen in a promise.
+            }
         }
     }
 
@@ -63,6 +79,20 @@
         updateTimer();
         updateDisplay();
         setTimeout(update, 500);
+    }
+
+    function updateCurrentSound() {
+        var shouldPlay = false;
+        // This shouldn't happen, but just in case.
+        if (currentSound !== null && currentSound !== undefined)
+        {
+            shouldPlay = !currentSound.paused;
+            currentSound.pause();
+        }
+        currentSound = sounds[comboSounds.value];
+        if (shouldPlay) {
+            currentSound.play();
+        }
     }
 
     function onDurationKey() {
@@ -73,7 +103,7 @@
         timer = makeTimer();
         timer.timeLeft = parseInt(fieldDuration.value);
         buttonStartPause.value = "Start";
-        audioCrickets.pause();
+        currentSound.pause();
     }
 
     function startPause() {
@@ -97,7 +127,7 @@
         } else if (buttonStartPause.value === "Ok") {
             timer.running = false; // Should be redundant
             timer.shouldRing = false;
-            audioCrickets.pause();
+            currentSound.pause();
         }
     }
 
