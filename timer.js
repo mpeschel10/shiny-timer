@@ -42,9 +42,37 @@
     }
     sounds["silent"].loop = true;
 
+    // Error function if a sound fails to load.
+    // Should remove the sound from the comboBox so user can't select it.
+    // Should not remove it from sounds since I'm worried about a race condition
+    //  where the default sound fails to load, but still gets selected as currentSound by init()
+    //  and then the user can fire the alarm, change currentSound, and reset() will be unable
+    //  to turn the sound off.
+    function willDeleteSound(path) {
+        function deleteSound() {
+            // Have to re-fetch comboSounds since this error function might fire before init()
+            const _comboSounds = document.getElementById('combo-sounds');
+            for (let i = 0; i < _comboSounds.length; i++) {
+                if (_comboSounds.options[i].value === path) {
+                    console.log("Deleting _combosound[" + i + "]: " + _comboSounds.options[i]);
+                    _comboSounds.remove(i)
+                    return;
+                }
+            }
+        }
+        console.log("Try delete sound of " + path);
+
+        if (document.readyState === "loading") {
+            window.addEventListener("load", deleteSound);
+        } else {
+            deleteSound();
+        }
+    }
+
     for (const path of soundPaths)
     {
         sounds[path] = new Audio("sounds/" + path);
+        sounds[path].addEventListener("error", () => { willDeleteSound(path); });
         sounds[path].loop = true;
     }
 
@@ -88,6 +116,7 @@
             console.log('Ring the bell!');
             timer.shouldRing = false;
             if (currentSound.paused) {
+                currentSound.fastSeek(0);
                 currentSound.play(); // play may fail if the source doesn't load, but the exception will happen in a promise.
             }
         }
@@ -105,6 +134,7 @@
         currentSound.pause();
         currentSound = sounds[comboSounds.value];
         if (shouldPlay) {
+            currentSound.fastSeek(0);
             currentSound.play();
         }
     }
@@ -117,7 +147,12 @@
         timer = makeTimer();
         timer.timeLeft = parseInt(fieldDuration.value);
         buttonStartPause.value = "Start";
-        currentSound.pause();
+        currentSound.pause() // Should be redundant.
+        for (const key of Object.keys(sounds)) {
+            if (sounds[key]) { // Should always be true.
+                sounds[key].pause();
+            }
+        }
     }
 
     function startPause() {
