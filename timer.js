@@ -24,13 +24,31 @@
         'car-alarm-loop.ogg'
     ]
 
-    var sounds = {}
+    var sounds = {
+        // Silent is a default sound so that currentSound will never be null.
+        // I generated the URI using Steve Wittens' "JavaScript audio synthesizer"
+        //  http://acko.net/files/audiosynth/index.html
+        // as described on his blog:
+        //  https://acko.net/blog/javascript-audio-synthesis-with-html-5/
+        // The URI (I think) consists of a WAVE file consisting of a single 0.
+        // Since this is purely generated data, I do not believe it is subject to copyright or licensing; I am not a lawyer.
+        "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
+        // I'm not sure if I'm being too clever with this or not.
+        // The alternative is to just throw in a bunch of null/undefined checks (maybe only undefined)
+        //  every time we would access currentSound.
+        // That seems more robust at runtime, and also avoids hard-coding a file,
+        //  but also more error-prone to code,
+        //  and also would require machinery for tracking if a sound should continue to play or not while we change selections.
+    }
+    sounds["silent"].loop = true;
+
     for (const path of soundPaths)
     {
         sounds[path] = new Audio("sounds/" + path);
         sounds[path].loop = true;
     }
-    var currentSound = sounds[soundPaths[0]];
+
+    var currentSound = sounds["silent"];
 
     function init() {
         timeDisplay = document.getElementById('time-display');
@@ -83,12 +101,8 @@
 
     function updateCurrentSound() {
         var shouldPlay = false;
-        // This shouldn't happen, but just in case.
-        if (currentSound !== null && currentSound !== undefined)
-        {
-            shouldPlay = !currentSound.paused;
-            currentSound.pause();
-        }
+        shouldPlay = !currentSound.paused;
+        currentSound.pause();
         currentSound = sounds[comboSounds.value];
         if (shouldPlay) {
             currentSound.play();
