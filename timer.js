@@ -116,7 +116,7 @@
             console.log('Ring the bell!');
             timer.shouldRing = false;
             if (currentSound.paused) {
-                currentSound.fastSeek(0);
+                currentSound.currentTime = 0;
                 currentSound.play(); // play may fail if the source doesn't load, but the exception will happen in a promise.
             }
         }
@@ -134,7 +134,7 @@
         currentSound.pause();
         currentSound = sounds[comboSounds.value];
         if (shouldPlay) {
-            currentSound.fastSeek(0);
+            currentSound.currentTime = 0;
             currentSound.play();
         }
     }
