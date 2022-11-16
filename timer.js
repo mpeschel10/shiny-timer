@@ -1,4 +1,6 @@
 (() => {
+    const reDigits = /\d+/;
+
     var timeDisplay;  // todo change to pTime or something
     var fieldDuration;
     var buttonStartPause; var buttonReset; var buttonTest;
@@ -139,8 +141,12 @@
         }
     }
 
-    function onDurationKey() {
-        //console.log('Key pressed in duration input!');
+    // Note that the user can still paste non-numbers in!
+    // This is just a hint that this box should be numbers only.
+    function onDurationKey(e) {
+        if (! reDigits.test(e.key)) {
+            e.preventDefault();
+        }
     }
 
     function onReset() {
