@@ -2,7 +2,8 @@
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
     var timeDisplay;  // todo change to pTime or something
-    var fieldHours; var fieldMinutes; var fieldSeconds;
+    var divTimerRun, divTimerSet;
+    var fieldHours, fieldMinutes, fieldSeconds;
     var buttonStartPause; var buttonReset; var buttonTest;
     var pTimer;
     var comboSounds;
@@ -82,12 +83,17 @@
 
     function init() {
         timeDisplay = document.getElementById('time-display');
+
+        divTimerSet = document.getElementById('div-timer-set');
         fieldHours = document.getElementById('field-hours');
         fieldMinutes = document.getElementById('field-minutes');
         fieldSeconds = document.getElementById('field-seconds');
+
         buttonStartPause = document.getElementById('button-start-pause');
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
+
+        divTimerRun = document.getElementById('div-timer-run');
         pTimer = document.getElementById('p-timer');
         comboSounds = document.getElementById('combo-sounds');
 
@@ -179,6 +185,8 @@
                 sounds[key].pause();
             }
         }
+        divTimerSet.style['display'] = "";
+        divTimerRun.style['display'] = "";
         timer = makeTimer();
         timer.timeLeft = parseTime();
         buttonStartPause.value = "Start";
@@ -186,6 +194,8 @@
 
     function startPause() {
         if (buttonStartPause.value === "Start") {
+            divTimerSet.style['display'] = "none";
+            divTimerRun.style['display'] = "block";
             if (timer.endTime === null) {
                 timer.timeLeft = parseTime();
             }
