@@ -9,13 +9,18 @@
     <p>Javascript timer demo</p>
     <p id="time-display">Current time should go here.</p>
     <form>
-    <label for="field-duration">Timer duration:</label>
+    <label for="field-minutes">Set timer:</label>
+    <br>
     <!-- type="tel" because mobile devices bring up number keyboard.
          pattern="\d*" to stop errors even if my validation js breaks
          e.g. if the user copies and pastes. -->
-    <input id="field-duration" name="field-duration" type="tel" pattern="\d*" value="60"></input>
+    <input id="field-hours" name="field-duration" type="tel" pattern="\d*\.\d*" value=""></input> <label for="field-hours">hours </label>
+    <input id="field-minutes" name="field-minutes" type="tel" pattern="\d*\.\d*" value="5"></input> <label for="field-minutes">minutes </label>
+    <input id="field-seconds" name="field-seconds" type="tel" pattern="\d*\.\d*" value=""></input> <label for="field-seconds">seconds</label>
+    <br>
     <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
     <input id="button-reset" name="button-reset" type="button" value="Reset"></input>
+    <label for="combo-sounds">Alarm sound:</label>
     <select id="combo-sounds" name="combo-sounds">
         <option selected="selected" value="bbbbeep-loop.ogg">Digital Alarm</option>
         <option value="church-bells-loop.ogg">Church Bells</option>

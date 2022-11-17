@@ -1,8 +1,8 @@
 (() => {
-    const reDigits = /\d+/;
+    const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
     var timeDisplay;  // todo change to pTime or something
-    var fieldDuration;
+    var fieldHours; var fieldMinutes; var fieldSeconds;
     var buttonStartPause; var buttonReset; var buttonTest;
     var pTimer;
     var comboSounds;
@@ -82,14 +82,19 @@
 
     function init() {
         timeDisplay = document.getElementById('time-display');
-        fieldDuration = document.getElementById('field-duration');
+        fieldHours = document.getElementById('field-hours');
+        fieldMinutes = document.getElementById('field-minutes');
+        fieldSeconds = document.getElementById('field-seconds');
         buttonStartPause = document.getElementById('button-start-pause');
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
         pTimer = document.getElementById('p-timer');
         comboSounds = document.getElementById('combo-sounds');
 
-        fieldDuration.addEventListener('keypress', onDurationKey);
+        fieldHours.addEventListener('keypress', onDurationKey);
+        fieldMinutes.addEventListener('keypress', onDurationKey);
+        fieldSeconds.addEventListener('keypress', onDurationKey);
+
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
         comboSounds.addEventListener('change', updateCurrentSound);
@@ -149,22 +154,40 @@
         }
     }
 
+    function parseTime() {
+        try {
+            // Multiply the strings by numbers to convert
+            //  because for some incomprehenisble reason, "parseFloat"
+            //  of empty string is NaN
+            var maybeSeconds = fieldHours.value * 3600 + fieldMinutes.value * 60 + fieldSeconds.value * 1;
+            // I could have written something complicated to extract
+            // a useable value no matter what,
+            //  but I think it is safer to fire the alarm immediately
+            //  so the user knows something is wrong.
+            if (Number.isNaN(maybeSeconds))
+                return 0;
+            return maybeSeconds;
+        } catch (e) {
+            return 0;
+        }
+    }
+
     function onReset() {
-        timer = makeTimer();
-        timer.timeLeft = parseInt(fieldDuration.value);
-        buttonStartPause.value = "Start";
-        currentSound.pause() // Should be redundant.
+        currentSound.pause() // Hopefully redundant.
         for (const key of Object.keys(sounds)) {
             if (sounds[key]) { // Should always be true.
                 sounds[key].pause();
             }
         }
+        timer = makeTimer();
+        timer.timeLeft = parseTime();
+        buttonStartPause.value = "Start";
     }
 
     function startPause() {
         if (buttonStartPause.value === "Start") {
             if (timer.endTime === null) {
-                timer.timeLeft = parseInt(fieldDuration.value);
+                timer.timeLeft = parseTime();
             }
 
             var offsetMilli = 1000 * timer.timeLeft;
