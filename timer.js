@@ -82,7 +82,7 @@
     var currentSound = sounds["silent"];
 
     function init() {
-        pClock = document.getElementById('pClock');
+        pClock = document.getElementById('p-clock');
 
         divTimerSet = document.getElementById('div-timer-set');
         fieldHours = document.getElementById('field-hours');
