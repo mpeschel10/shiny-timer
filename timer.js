@@ -1,7 +1,7 @@
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
-    var timeDisplay;  // todo change to pTime or something
+    var pClock;
     var divTimerRun, divTimerSet;
     var fieldHours, fieldMinutes, fieldSeconds;
     var buttonStartPause; var buttonReset; var buttonTest;
@@ -82,7 +82,7 @@
     var currentSound = sounds["silent"];
 
     function init() {
-        timeDisplay = document.getElementById('time-display');
+        pClock = document.getElementById('pClock');
 
         divTimerSet = document.getElementById('div-timer-set');
         fieldHours = document.getElementById('field-hours');
@@ -97,9 +97,9 @@
         pTimer = document.getElementById('p-timer');
         comboSounds = document.getElementById('combo-sounds');
 
-        fieldHours.addEventListener('keypress', onDurationKey);
-        fieldMinutes.addEventListener('keypress', onDurationKey);
-        fieldSeconds.addEventListener('keypress', onDurationKey);
+        fieldHours.addEventListener('keypress', forbidNondigits);
+        fieldMinutes.addEventListener('keypress', forbidNondigits);
+        fieldSeconds.addEventListener('keypress', forbidNondigits);
 
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
@@ -150,7 +150,7 @@
     }
 
     function updateDisplay() {
-        timeDisplay.innerHTML = Date();
+        pClock.innerHTML = Date();
         pTimer.innerHTML = secondsToHHMMSS(timer.timeLeft);
         if (timer.shouldRing) {
             console.log('Ring the bell!');
@@ -181,7 +181,7 @@
 
     // Note that the user can still paste non-numbers in!
     // This is just a hint that this box should be numbers only.
-    function onDurationKey(e) {
+    function forbidNondigits(e) {
         if (! reDigits.test(e.key)) {
             e.preventDefault();
         }
