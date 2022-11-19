@@ -109,6 +109,33 @@
         setTimeout(update, 500);
     }
 
+    function secondsToHHMMSS(seconds) {
+        if (seconds < 0)
+            return "00:00:00";
+        seconds = Math.ceil(seconds);
+        
+        var daysPrefix = "";
+        var days = Math.floor(seconds / 86400);
+        if (days > 0) {
+            seconds -= days * 86400;
+            if (days > 1)
+                daysPrefix = String(days) + " days, ";
+            else
+                daysPrefix = "1 day, ";
+        }
+        var hours = Math.floor(seconds / 3600);
+        seconds -= hours * 3600;
+        var minutes = Math.floor(seconds / 60);
+        seconds -= minutes * 60;
+        seconds = Math.floor(seconds)
+
+        hours = String(hours).padStart(2, "0");
+        minutes = String(minutes).padStart(2, "0");
+        seconds = String(seconds).padStart(2, "0");
+
+        return daysPrefix + hours + ":" + minutes + ":" + seconds;
+    }
+
     function updateTimer() {
         if (timer.running) {
             timer.timeLeft = (timer.endTime - Date.now()) / 1000;
@@ -124,7 +151,7 @@
 
     function updateDisplay() {
         timeDisplay.innerHTML = Date();
-        pTimer.innerHTML = timer.timeLeft;
+        pTimer.innerHTML = secondsToHHMMSS(timer.timeLeft);
         if (timer.shouldRing) {
             console.log('Ring the bell!');
             timer.shouldRing = false;
