@@ -2,19 +2,18 @@
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
     var pClock;
-    var divTimerRun, divTimerSet;
     var fieldHours, fieldMinutes, fieldSeconds;
     var buttonStartPause; var buttonReset; var buttonTest;
-    var pTimer;
     var comboSounds;
 
     var timer;
     function makeTimer() {
         return {
-        endTime: null,
-        timeLeft: 0,
-        running: false,
-        shouldRing: false
+            endTime: null,
+            timeLeft: 0,
+            running: false,
+            shouldRing: false,
+            resetTime: ["", "5", ""]
         };
     }
     timer = makeTimer();
@@ -84,7 +83,6 @@
     function init() {
         pClock = document.getElementById('p-clock');
 
-        divTimerSet = document.getElementById('div-timer-set');
         fieldHours = document.getElementById('field-hours');
         fieldMinutes = document.getElementById('field-minutes');
         fieldSeconds = document.getElementById('field-seconds');
@@ -93,8 +91,6 @@
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
 
-        divTimerRun = document.getElementById('div-timer-run');
-        pTimer = document.getElementById('p-timer');
         comboSounds = document.getElementById('combo-sounds');
 
         fieldHours.addEventListener('keypress', forbidNondigits);
@@ -109,20 +105,11 @@
         setTimeout(update, 500);
     }
 
-    function secondsToHHMMSS(seconds) {
+    function secondsToHoursMinutesSeconds(seconds) {
         if (seconds < 0)
             return "00:00:00";
         seconds = Math.ceil(seconds);
         
-        var daysPrefix = "";
-        var days = Math.floor(seconds / 86400);
-        if (days > 0) {
-            seconds -= days * 86400;
-            if (days > 1)
-                daysPrefix = String(days) + " days, ";
-            else
-                daysPrefix = "1 day, ";
-        }
         var hours = Math.floor(seconds / 3600);
         seconds -= hours * 3600;
         var minutes = Math.floor(seconds / 60);
@@ -133,7 +120,7 @@
         minutes = String(minutes).padStart(2, "0");
         seconds = String(seconds).padStart(2, "0");
 
-        return daysPrefix + hours + ":" + minutes + ":" + seconds;
+        return [hours, minutes, seconds];
     }
 
     function updateTimer() {
@@ -151,7 +138,19 @@
 
     function updateDisplay() {
         pClock.innerHTML = Date();
-        pTimer.innerHTML = secondsToHHMMSS(timer.timeLeft);
+
+        // I am beginning to suspect I should have just made
+        //  several different buttons to enable/diasble, rather than
+        //  try to "guess" what the user intent is from
+        //  the display text.
+        if (buttonStartPause.value !== "Start")
+        {
+            hms = secondsToHoursMinutesSeconds(timer.timeLeft);
+            fieldHours.value = hms[0];
+            fieldMinutes.value = hms[1];
+            fieldSeconds.value = hms[2];
+        }
+
         if (timer.shouldRing) {
             console.log('Ring the bell!');
             timer.shouldRing = false;
@@ -212,19 +211,20 @@
                 sounds[key].pause();
             }
         }
-        divTimerSet.style['display'] = "";
-        divTimerRun.style['display'] = "";
-        timer = makeTimer();
-        timer.timeLeft = parseTime();
         buttonStartPause.value = "Start";
+        fieldHours.value = timer.resetTime[0];
+        fieldMinutes.value = timer.resetTime[1];
+        fieldSeconds.value = timer.resetTime[2];
+        timer = makeTimer();
     }
 
     function startPause() {
         if (buttonStartPause.value === "Start") {
-            divTimerSet.style['display'] = "none";
-            divTimerRun.style['display'] = "block";
             if (timer.endTime === null) {
                 timer.timeLeft = parseTime();
+                timer.resetTime = [
+                    fieldHours.value, fieldMinutes.value, fieldSeconds.value
+                ];
             }
 
             var offsetMilli = 1000 * timer.timeLeft;
