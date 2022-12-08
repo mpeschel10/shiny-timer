@@ -13,9 +13,19 @@
         <!-- type="tel" because mobile devices bring up number keyboard.
              pattern="\d*" to stop errors even if my validation js breaks
              e.g. if the user copies and pastes. -->
-        <input id="field-hours" name="field-duration" type="tel" pattern="\d*\.\d*" value=""></input> <label for="field-hours">hours </label>
-        <input id="field-minutes" name="field-minutes" type="tel" pattern="\d*\.\d*" value="5"></input> <label for="field-minutes">minutes </label>
-        <input id="field-seconds" name="field-seconds" type="tel" pattern="\d*\.\d*" value=""></input> <label for="field-seconds">seconds</label>
+        <div id="div-field-pincher">
+            <input id="field-dummy-border" type="text"></input>
+
+            <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.\d*" value=""></input>
+            <label for="field-hours">hours </label>
+
+            <input id="field-minutes" class="field-borderless" name="field-minutes" type="tel" pattern="\d*\.\d*" value="5"></input>
+            <label for="field-minutes">minutes </label>
+
+            <input id="field-seconds" class="field-borderless" name="field-seconds" type="tel" pattern="\d*\.\d*" value=""></input>
+            <label for="field-seconds">seconds</label>
+
+         </div>
         <br>
         <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
         <input id="button-reset" name="button-reset" type="button" value="Reset"></input>

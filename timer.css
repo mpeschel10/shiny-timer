@@ -1,0 +1,27 @@
+.field-borderless {
+    border: none;
+    text-align: right;
+    width: 3em;
+}
+
+#field-hours {
+    margin-left: 1px; /* this leftmost field will overlap the dummy border field if no margin-left. */
+}
+
+
+/* position: relative so dummy-border position: absolute can fit in;
+display: inline-block so it fits tightly to the fields, allowing dummy-border width: 100% but also pushes vertically with margin-bottom 2px*/
+#div-field-pincher {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 2px;
+}
+
+#field-dummy-border {
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    top: 1px;
+    width: 100%;
+}
+
