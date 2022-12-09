@@ -3,6 +3,7 @@
 
     var pClock;
     var fieldHours, fieldMinutes, fieldSeconds;
+    var fieldDummyBorder;
     var buttonStartPause; var buttonReset; var buttonTest;
     var comboSounds;
 
@@ -86,6 +87,7 @@
         fieldHours = document.getElementById('field-hours');
         fieldMinutes = document.getElementById('field-minutes');
         fieldSeconds = document.getElementById('field-seconds');
+        fieldDummyBorder = document.getElementById("field-dummy-border");
 
         buttonStartPause = document.getElementById('button-start-pause');
         buttonReset = document.getElementById('button-reset');
@@ -216,6 +218,10 @@
         fieldMinutes.value = timer.resetTime[1];
         fieldSeconds.value = timer.resetTime[2];
         timer = makeTimer();
+        fieldDummyBorder.style.visibility = "visible";
+        fieldHours.disabled = false;
+        fieldMinutes.disabled = false;
+        fieldSeconds.disabled = false;
     }
 
     function startPause() {
@@ -232,6 +238,11 @@
 
             timer.running = true;
             buttonStartPause.value = "Stop";
+
+            fieldDummyBorder.style.visibility = "hidden";
+            fieldHours.disabled = true;
+            fieldMinutes.disabled = true;
+            fieldSeconds.disabled = true;
 
             updateDisplay();
         } else if (buttonStartPause.value === "Stop") {
