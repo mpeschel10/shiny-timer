@@ -98,6 +98,9 @@
         fieldHours.addEventListener('keypress', forbidNondigits);
         fieldMinutes.addEventListener('keypress', forbidNondigits);
         fieldSeconds.addEventListener('keypress', forbidNondigits);
+        fieldHours.addEventListener('keydown', jumpOnArrow);
+        fieldMinutes.addEventListener('keydown', jumpOnArrow);
+        fieldSeconds.addEventListener('keydown', jumpOnArrow);
 
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
@@ -123,6 +126,29 @@
         seconds = String(seconds).padStart(2, "0");
 
         return [hours, minutes, seconds];
+    }
+
+    function jumpOnArrow(e) {
+        let field = e.target; let i = field.selectionStart;
+        let targetField = null;
+
+        if (e.key === "ArrowLeft" && i === 0) {
+            if (field === fieldMinutes) targetField = fieldHours;
+            else if (field === fieldSeconds) targetField = fieldMinutes;
+            else return;
+            targetField.focus();
+            let last = targetField.value.length;
+            targetField.setSelectionRange(last, last);
+            e.preventDefault();
+
+        } else if (e.key === "ArrowRight" && i === field.value.length) {
+            if (field === fieldMinutes) targetField = fieldSeconds;
+            else if (field === fieldHours) targetField = fieldMinutes;
+            else return;
+            targetField.focus();
+            targetField.setSelectionRange(0, 0);
+            e.preventDefault();
+        }
     }
 
     function updateTimer() {
