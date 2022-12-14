@@ -12,6 +12,7 @@ whitelist = [
     'sounds/*.ogg',
     'timer.html',
     'timer.js',
+    'timer.css',
     'licenses.txt'
 ]
 

@@ -95,12 +95,12 @@
 
         comboSounds = document.getElementById('combo-sounds');
 
-        fieldHours.addEventListener('keypress', forbidNondigits);
-        fieldMinutes.addEventListener('keypress', forbidNondigits);
-        fieldSeconds.addEventListener('keypress', forbidNondigits);
-        fieldHours.addEventListener('keydown', jumpOnArrow);
-        fieldMinutes.addEventListener('keydown', jumpOnArrow);
-        fieldSeconds.addEventListener('keydown', jumpOnArrow);
+        fieldHours.addEventListener('keypress', onKeyPress);
+        fieldMinutes.addEventListener('keypress', onKeyPress);
+        fieldSeconds.addEventListener('keypress', onKeyPress);
+        fieldHours.addEventListener('keydown', onKeyDown);
+        fieldMinutes.addEventListener('keydown', onKeyDown);
+        fieldSeconds.addEventListener('keydown', onKeyDown);
 
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
@@ -126,29 +126,6 @@
         seconds = String(seconds).padStart(2, "0");
 
         return [hours, minutes, seconds];
-    }
-
-    function jumpOnArrow(e) {
-        let field = e.target; let i = field.selectionStart;
-        let targetField = null;
-
-        if (e.key === "ArrowLeft" && i === 0) {
-            if (field === fieldMinutes) targetField = fieldHours;
-            else if (field === fieldSeconds) targetField = fieldMinutes;
-            else return;
-            targetField.focus();
-            let last = targetField.value.length;
-            targetField.setSelectionRange(last, last);
-            e.preventDefault();
-
-        } else if (e.key === "ArrowRight" && i === field.value.length) {
-            if (field === fieldMinutes) targetField = fieldSeconds;
-            else if (field === fieldHours) targetField = fieldMinutes;
-            else return;
-            targetField.focus();
-            targetField.setSelectionRange(0, 0);
-            e.preventDefault();
-        }
     }
 
     function updateTimer() {
@@ -206,10 +183,38 @@
         }
     }
 
-    // Note that the user can still paste non-numbers in!
-    // This is just a hint that this box should be numbers only.
-    function forbidNondigits(e) {
-        if (! reDigits.test(e.key)) {
+    function onKeyPress(e) {
+        // Forbid non-digits from being typed.
+        // Note that the user can still paste non-numbers in!
+        // Forbidding letters only hints that this input should be numbers.
+        console.log(e);
+        if (e.key === "Enter" ) {
+            buttonStartPause.click();
+        } else if (! reDigits.test(e.key)) {
+            e.preventDefault();
+        }
+    }
+
+    function onKeyDown(e) {
+        // If it's an arrow key, maybe jump from box to box.
+        // I can't do this in onKeyPress since arrows don't fire that event
+        let field = e.target; let i = field.selectionStart;
+        let targetField = null;
+        if (e.key === "ArrowLeft" && i === 0) {
+            if (field === fieldMinutes) targetField = fieldHours;
+            else if (field === fieldSeconds) targetField = fieldMinutes;
+            else return;
+            targetField.focus();
+            let last = targetField.value.length;
+            targetField.setSelectionRange(last, last);
+            e.preventDefault();
+
+        } else if (e.key === "ArrowRight" && i === field.value.length) {
+            if (field === fieldMinutes) targetField = fieldSeconds;
+            else if (field === fieldHours) targetField = fieldMinutes;
+            else return;
+            targetField.focus();
+            targetField.setSelectionRange(0, 0);
             e.preventDefault();
         }
     }
