@@ -137,7 +137,6 @@
                 timer.timeLeft = 0;
                 timer.state = "ringing";
                 buttonStartPause.value = "Ok";
-                timer.endTime = null;
             }
         }
     }
@@ -149,7 +148,7 @@
         //  several different buttons to enable/diasble, rather than
         //  try to "guess" what the user intent is from
         //  the display text.
-        if (buttonStartPause.value !== "Start")
+        if (timer.state !== "wait_for_entry")
         {
             hms = secondsToHoursMinutesSeconds(timer.timeLeft);
             fieldHours.value = hms[0];
@@ -253,33 +252,34 @@
         fieldMinutes.value = timer.resetTime[1];
         fieldSeconds.value = timer.resetTime[2];
         timer = makeTimer();
+        updateCurrentSound();   // Hopefully redundant.
     }
 
     function startPause() {
-        if (buttonStartPause.value === "Start") {
-            if (timer.endTime === null) {
-                timer.timeLeft = parseTime();
-                timer.resetTime = [
-                    fieldHours.value, fieldMinutes.value, fieldSeconds.value
-                ];
-            }
-
+        if (timer.state === "wait_for_entry") {
+            timer.timeLeft = parseTime();
+            timer.resetTime = [
+                fieldHours.value, fieldMinutes.value, fieldSeconds.value
+            ];
+        }
+        if (timer.state === "wait_for_entry" || timer.state === "paused") {
             var offsetMilli = 1000 * timer.timeLeft;
             timer.endTime = Date.now() + offsetMilli;
 
             timer.state = "running";
-            buttonStartPause.value = "Stop";
+            buttonStartPause.value = "Pause";
 
             updateDisplay();
-        } else if (buttonStartPause.value === "Stop") {
+        } else if (timer.state === "running") {
             updateTimer();
             timer.state = "paused";
 
             buttonStartPause.value = "Start";
-        } else if (buttonStartPause.value === "Ok") {
+        } else if (timer.state === "ringing") {
             timer.state = "rung";
             currentSound.pause();
         }
+        // else if (timer.state === "rung")
     }
 
     window.addEventListener('load', init, false);
