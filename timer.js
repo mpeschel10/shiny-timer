@@ -104,7 +104,7 @@
             field.addEventListener('focus', onFocus);
         }
 
-        buttonStartPause.addEventListener('click', startPause);
+        buttonStartPause.addEventListener('click', onButtonStartPause);
         buttonReset.addEventListener('click', onReset);
         comboSounds.addEventListener('change', updateCurrentSound);
 
@@ -255,7 +255,7 @@
         updateCurrentSound();   // Hopefully redundant.
     }
 
-    function startPause() {
+    function onButtonStartPause() {
         if (timer.state === "wait_for_entry") {
             timer.timeLeft = parseTime();
             timer.resetTime = [
