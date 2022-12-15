@@ -95,12 +95,12 @@
 
         comboSounds = document.getElementById('combo-sounds');
 
-        fieldHours.addEventListener('keypress', onKeyPress);
-        fieldMinutes.addEventListener('keypress', onKeyPress);
-        fieldSeconds.addEventListener('keypress', onKeyPress);
-        fieldHours.addEventListener('keydown', onKeyDown);
-        fieldMinutes.addEventListener('keydown', onKeyDown);
-        fieldSeconds.addEventListener('keydown', onKeyDown);
+        for (let field of [fieldHours, fieldMinutes, fieldSeconds])
+        {
+            field.addEventListener('keypress', onKeyPress);
+            field.addEventListener('keydown', onKeyDown);
+            field.addEventListener('focus', onFocus);
+        }
 
         buttonStartPause.addEventListener('click', startPause);
         buttonReset.addEventListener('click', onReset);
@@ -237,6 +237,10 @@
         }
     }
 
+    function onFocus() {
+        console.log("Focus event has fired!");
+    }
+
     function onReset() {
         currentSound.pause() // Hopefully redundant.
         for (const key of Object.keys(sounds)) {
@@ -249,10 +253,6 @@
         fieldMinutes.value = timer.resetTime[1];
         fieldSeconds.value = timer.resetTime[2];
         timer = makeTimer();
-        fieldDummyBorder.style.visibility = "visible";
-        fieldHours.disabled = false;
-        fieldMinutes.disabled = false;
-        fieldSeconds.disabled = false;
     }
 
     function startPause() {
@@ -269,11 +269,6 @@
 
             timer.running = true;
             buttonStartPause.value = "Stop";
-
-            fieldDummyBorder.style.visibility = "hidden";
-            fieldHours.disabled = true;
-            fieldMinutes.disabled = true;
-            fieldSeconds.disabled = true;
 
             updateDisplay();
         } else if (buttonStartPause.value === "Stop") {

@@ -1,7 +1,3 @@
-.field-borderless:disabled {
-    color: black;
-}
-
 .field-borderless {
     border: none;
     text-align: right;
