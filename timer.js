@@ -12,9 +12,11 @@
         return {
             endTime: null,
             timeLeft: 0,
-            running: false,
-            shouldRing: false,
-            resetTime: ["", "5", ""]
+            resetTime: ["", "5", ""],
+            state: "wait_for_entry",
+            // states: wait_for_entry, running, paused, ringing, rung
+            // difference between wait_for_entry and paused
+            // is that paused remembers a reset value.
         };
     }
     timer = makeTimer();
@@ -129,12 +131,11 @@
     }
 
     function updateTimer() {
-        if (timer.running) {
+        if (timer.state === "running") {
             timer.timeLeft = (timer.endTime - Date.now()) / 1000;
             if (timer.timeLeft < 0) {
                 timer.timeLeft = 0;
-                timer.running = false;
-                timer.shouldRing = true;
+                timer.state = "ringing";
                 buttonStartPause.value = "Ok";
                 timer.endTime = null;
             }
@@ -156,9 +157,8 @@
             fieldSeconds.value = hms[2];
         }
 
-        if (timer.shouldRing) {
+        if (timer.state === "ringing" && currentSound.paused) {
             console.log('Ring the bell!');
-            timer.shouldRing = false;
             if (currentSound.paused) {
                 currentSound.currentTime = 0;
                 currentSound.play(); // play may fail if the source doesn't load, but the exception will happen in a promise.
@@ -267,18 +267,17 @@
             var offsetMilli = 1000 * timer.timeLeft;
             timer.endTime = Date.now() + offsetMilli;
 
-            timer.running = true;
+            timer.state = "running";
             buttonStartPause.value = "Stop";
 
             updateDisplay();
         } else if (buttonStartPause.value === "Stop") {
             updateTimer();
-            timer.running = false;
+            timer.state = "paused";
 
             buttonStartPause.value = "Start";
         } else if (buttonStartPause.value === "Ok") {
-            timer.running = false; // Should be redundant
-            timer.shouldRing = false;
+            timer.state = "rung";
             currentSound.pause();
         }
     }
