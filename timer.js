@@ -149,10 +149,16 @@
         //  the display text.
         if (timer.state !== "wait_for_entry")
         {
-            hms = secondsToHoursMinutesSeconds(timer.timeLeft);
-            fieldHours.value = hms[0];
-            fieldMinutes.value = hms[1];
-            fieldSeconds.value = hms[2];
+            let hms = secondsToHoursMinutesSeconds(timer.timeLeft);
+            let fields = [fieldHours, fieldMinutes, fieldSeconds];
+            // Preserve user selection while updating the field.
+            for (let i = 0; i < fields.length; i++)
+            {
+                field = fields[i];
+                let s = field.selectionStart; let e = field.selectionEnd;
+                field.value = hms[i];
+                field.setSelectionRange(s, e);
+            }
         }
 
         if (timer.state === "ringing" && currentSound.paused) {
