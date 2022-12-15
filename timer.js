@@ -101,7 +101,6 @@
         {
             field.addEventListener('keypress', onKeyPress);
             field.addEventListener('keydown', onKeyDown);
-            field.addEventListener('focus', onFocus);
         }
 
         buttonStartPause.addEventListener('click', onButtonStartPause);
@@ -191,6 +190,8 @@
             buttonStartPause.click();
         } else if (! reDigits.test(e.key)) {
             e.preventDefault();
+        } else if (timer.state !== "wait_for_entry") {
+            onReset(e, resetInputs=false);
         }
     }
 
@@ -215,6 +216,8 @@
             targetField.focus();
             targetField.setSelectionRange(0, 0);
             e.preventDefault();
+        } else if ((e.key === "Backspace" || e.key === "Delete") && timer.state !== "wait_for_entry") {
+            onReset(e, resetInputs=false);
         }
     }
 
@@ -236,11 +239,7 @@
         }
     }
 
-    function onFocus() {
-        console.log("Focus event has fired!");
-    }
-
-    function onReset() {
+    function onReset(e, resetInputs=true) {
         currentSound.pause() // Hopefully redundant.
         for (const key of Object.keys(sounds)) {
             if (sounds[key]) { // Should always be true.
@@ -248,10 +247,12 @@
             }
         }
         buttonStartPause.value = "Start";
-        fieldHours.value = timer.resetTime[0];
-        fieldMinutes.value = timer.resetTime[1];
-        fieldSeconds.value = timer.resetTime[2];
-        timer = makeTimer();
+        if (resetInputs) {
+            fieldHours.value = timer.resetTime[0];
+            fieldMinutes.value = timer.resetTime[1];
+            fieldSeconds.value = timer.resetTime[2];
+        }
+        timer = makeTimer(); // timer.state = "wait_for_entry";
         updateCurrentSound();   // Hopefully redundant.
     }
 
