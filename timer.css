@@ -25,3 +25,6 @@ display: inline-block so it fits tightly to the fields, allowing dummy-border wi
     width: 100%;
 }
 
+#button-start-pause {
+    width: 4em; /* Longest label: "pause" */
+}
