@@ -260,6 +260,7 @@
         }
         timer = makeTimer(); // timer.state = "wait_for_entry";
         updateCurrentSound();   // Hopefully redundant.
+        fieldDummyBorder.style.visibility = "visible";
     }
 
     function onButtonStartPause() {
@@ -275,16 +276,19 @@
 
             timer.state = "running";
             buttonStartPause.value = "Pause";
+            fieldDummyBorder.style.visibility = "hidden";
 
             updateDisplay();
         } else if (timer.state === "running") {
             updateTimer();
             timer.state = "paused";
+            fieldDummyBorder.style.visibility = "visible";
 
             buttonStartPause.value = "Start";
         } else if (timer.state === "ringing") {
             timer.state = "rung";
             currentSound.pause();
+            fieldDummyBorder.style.visibility = "visible";
         }
         // else if (timer.state === "rung")
     }
