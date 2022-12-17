@@ -6,6 +6,7 @@
     var fieldDummyBorder;
     var buttonStartPause; var buttonReset; var buttonTest;
     var comboSounds;
+    let intervalID; // Capitalize D because that's how it is in the docs
 
     var timer;
     function makeTimer() {
@@ -107,8 +108,9 @@
         buttonReset.addEventListener('click', onReset);
         comboSounds.addEventListener('change', updateCurrentSound);
 
-        updateCurrentSound();
-        setTimeout(update, 500);
+        updateCurrentSound(); // So if something doesn't load, recover
+        update(); // So clock updates immediately on page load
+        intervalID = setInterval(update, 500); // So if error, it might recover
     }
 
     function secondsToHoursMinutesSeconds(seconds) {
@@ -173,7 +175,6 @@
     function update() {
         updateTimer();
         updateDisplay();
-        setTimeout(update, 500);
     }
 
     function updateCurrentSound() {
