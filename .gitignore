@@ -1,4 +1,5 @@
 next.txt
 *.wav
 push_to_github.py
+*.swp
 
