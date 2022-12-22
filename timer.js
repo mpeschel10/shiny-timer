@@ -22,65 +22,52 @@
     }
     timer = makeTimer();
 
-    var soundPaths = [
-        'bbbbeep-loop.ogg',
-        'church-bells-loop.ogg',
-        'slow-bell-loop.ogg',
-        'crickets-loop.ogg',
-        'car-alarm-loop.ogg'
-    ]
-
+  /*"silent" is a default sound so that currentSound will never be null.
+    I generated the URI using Steve Wittens' "JavaScript audio synthesizer"
+     http://acko.net/files/audiosynth/index.html
+    as described on his blog:
+     https://acko.net/blog/javascript-audio-synthesis-with-html-5/
+    The URI (I think) consists of a WAVE file consisting of a single 0.
+    Since this is purely generated data, I do not believe it is subject to copyright or licensing; I am not a lawyer.
+    I'm not sure if I'm being too clever with this or not.
+    The alternative is to just throw in a bunch of null/undefined checks (maybe only undefined)
+     every time we would access currentSound.
+    That seems more robust at runtime, and also avoids hard-coding a file,
+     but also more error-prone to code,
+     and also would require machinery for tracking if a sound should continue to play or not while we change selections.*/
     var sounds = {
-        // Silent is a default sound so that currentSound will never be null.
-        // I generated the URI using Steve Wittens' "JavaScript audio synthesizer"
-        //  http://acko.net/files/audiosynth/index.html
-        // as described on his blog:
-        //  https://acko.net/blog/javascript-audio-synthesis-with-html-5/
-        // The URI (I think) consists of a WAVE file consisting of a single 0.
-        // Since this is purely generated data, I do not believe it is subject to copyright or licensing; I am not a lawyer.
         "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
-        // I'm not sure if I'm being too clever with this or not.
-        // The alternative is to just throw in a bunch of null/undefined checks (maybe only undefined)
-        //  every time we would access currentSound.
-        // That seems more robust at runtime, and also avoids hard-coding a file,
-        //  but also more error-prone to code,
-        //  and also would require machinery for tracking if a sound should continue to play or not while we change selections.
     }
+
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
 
-    // Error function if a sound fails to load.
-    // Should remove the sound from the comboBox so user can't select it.
-    // Should not remove it from sounds since I'm worried about a race condition
-    //  where the default sound fails to load, but still gets selected as currentSound by init()
-    //  and then the user can fire the alarm, change currentSound, and reset() will be unable
-    //  to turn the sound off.
-    function willDeleteSound(path) {
-        function deleteSound() {
-            // Have to re-fetch comboSounds since this error function might fire before init()
-            const _comboSounds = document.getElementById('combo-sounds');
-            for (let i = 0; i < _comboSounds.length; i++) {
-                if (_comboSounds.options[i].value === path) {
-                    console.log("Deleting _combosound[" + i + "]: " + _comboSounds.options[i]);
-                    _comboSounds.remove(i)
-                    return;
-                }
+     /* Error function if a sound fails to load.
+        Should remove the sound from the comboBox so user can't select it.
+        Should not remove it from sounds since I'm worried about a race condition
+         where the default sound fails to load, but still gets selected as currentSound by init()
+         and then the user can fire the alarm, change currentSound, and reset() will be unable
+         to turn the sound off.*/
+    function hideSound(path) {
+        console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
+        for (let i = 0; i < comboSounds.length; i++) {
+            if (comboSounds.options[i].value === path) {
+                console.log("Deleting combosound[" + i + "]: " + comboSounds.options[i]);
+                comboSounds.remove(i)
+                break;
             }
         }
-        console.log("Try delete sound of " + path);
-
-        if (document.readyState === "loading") {
-            window.addEventListener("load", deleteSound);
-        } else {
-            deleteSound();
-        }
+        updateCurrentSound();
     }
 
     function loadSounds() {
-        for (const path of soundPaths)
-        {
+        for (let option of comboSounds) {
+            let path = option.value;
+            // "silent" sound is loaded immediately after <head> element; loadSounds isn't responsible.
+            if (path === "silent")
+                continue;
             sounds[path] = new Audio("sounds/" + path);
-            sounds[path].addEventListener("error", () => { willDeleteSound(path); });
+            sounds[path].addEventListener("error", () => { hideSound(path); });
             sounds[path].loop = true;
         }
     }
@@ -110,7 +97,9 @@
         buttonReset.addEventListener('click', onReset);
         comboSounds.addEventListener('change', updateCurrentSound);
 
-        updateCurrentSound(); // So if something doesn't load, recover
+        // All comboBox entries are associated with an Audio element; it is safe to updateCurrentSound.
+        // Necessary because currentSound is reset to "silent" on page load.
+        updateCurrentSound(); 
         update(); // So clock updates immediately on page load
         intervalID = setInterval(update, 500); // So if error, it might recover
     }
@@ -169,7 +158,16 @@
             console.log('Ring the bell!');
             if (currentSound.paused) {
                 currentSound.currentTime = 0;
-                currentSound.play(); // play may fail if the source doesn't load, but the exception will happen in a promise.
+                currentSound.play().catch(
+                    (e) => {
+                        console.log("Could not play sound " + currentSound.src);
+                        console.log(e);
+                        // In theory, as sounds fail to load, comboSounds will eventually have only good sounds in it.
+                        // So updateCurrentSound will after enough iterations make currentSound good,
+                        //  so we will (eventually) ring, which is failing safe, unless no sounds load at all.
+                        updateCurrentSound();
+                    }
+                );
             }
         }
     }
@@ -249,12 +247,13 @@
     }
 
     function onReset(e, resetInputs=true) {
-        currentSound.pause() // Hopefully redundant.
         for (const key of Object.keys(sounds)) {
             if (sounds[key]) { // Should always be true.
                 sounds[key].pause();
             }
         }
+        currentSound.pause() // Hopefully redundant.
+
         buttonStartPause.value = "Start";
         if (resetInputs) {
             fieldHours.value = timer.resetTime[0];
