@@ -1,18 +1,19 @@
 #!/bin/python3
 
 import subprocess
+import shutil
 
 from pathlib import Path
-build_dir = Path(__file__).resolve().parent.joinpath('build')
+script_dir = Path(__file__).resolve().parent
 key_path = Path('/home/mpeschel/.ssh/dobby')
-server_str = 'root@mpeschel10.com:/var/www/timer'
+target_string = 'root@mpeschel10.com:/var/www/timer'
 
 whitelist = [
     'sounds/*.ogg',
     'timer.html',
     'timer.js',
     'timer.css',
-    'copyright', # this is a symlink; use --copy-links to send as file
+    'licenses.txt'
 ]
 
 # rsync does have a built-in whitelist/blacklist functionality
@@ -20,21 +21,18 @@ whitelist = [
 # But I spent half an hour poking at that and couldn't work it out.
 # So just implement the file-list builder in python instead.
 source_paths = []
-for pattern in whitelist:
-    if '*' in pattern:
-        for child in build_dir.glob(pattern):
-            # Use relative paths because I use rsync -R(elative),
-            #  and we want paths to be relative to /var/www/timer
-            #  on the server.
-            source_paths.append(child.relative_to(build_dir))
+for s in whitelist:
+    if '*' in s:
+        for child in script_dir.glob(s):
+            source_paths.append(child.relative_to(script_dir))
     else:
-        source_paths.append(Path(pattern))
+        source_paths.append(Path(s))
 
 # rsync flags are basically -a|--archive but not recursive.
-rsync_short_flags = '-' + ''.join([
+rsync_flags = '-' + ''.join([
     #'r', # recursive (use whitelist instead)
-    'R', # preserve relative path
-    #'l', # copy symlinks as symlinks
+    'R', # preserve relative path, necessary due to file-list-as-whitelist
+    'l', # copy symlinks
     'p', # copy permissions
     't', # copy times
     'o', # copy owner
@@ -46,9 +44,8 @@ rsync_short_flags = '-' + ''.join([
 
 ssh_cmd = ['ssh', '-i', key_path]
 ssh_cmd_str = ' '.join(str(s) for s in ssh_cmd)
-rsync_cmd = ['rsync', rsync_short_flags, '--copy-links', '-e', ssh_cmd_str] + source_paths + [server_str]
+rsync_cmd = ['rsync', rsync_flags, '-e', ssh_cmd_str] + source_paths + [target_string]
 
 #print(' '.join(str(s) for s in rsync_cmd))
 
-subprocess.run(rsync_cmd, cwd=build_dir)
-
+subprocess.run(rsync_cmd)
