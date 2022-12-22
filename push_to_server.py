@@ -4,16 +4,16 @@ import subprocess
 import shutil
 
 from pathlib import Path
-script_dir = Path(__file__).resolve().parent
+build_dir = Path(__file__).resolve().parent
 key_path = Path('/home/mpeschel/.ssh/dobby')
-target_string = 'root@mpeschel10.com:/var/www/timer'
+server_str = 'root@mpeschel10.com:/var/www/timer'
 
 whitelist = [
     'sounds/*.ogg',
     'timer.html',
     'timer.js',
     'timer.css',
-    'licenses.txt'
+    'copyright'
 ]
 
 # rsync does have a built-in whitelist/blacklist functionality
@@ -21,12 +21,12 @@ whitelist = [
 # But I spent half an hour poking at that and couldn't work it out.
 # So just implement the file-list builder in python instead.
 source_paths = []
-for s in whitelist:
-    if '*' in s:
-        for child in script_dir.glob(s):
-            source_paths.append(child.relative_to(script_dir))
+for pattern in whitelist:
+    if '*' in pattern:
+        for child in build_dir.glob(pattern):
+            source_paths.append(child.relative_to(build_dir))
     else:
-        source_paths.append(Path(s))
+        source_paths.append(Path(pattern))
 
 # rsync flags are basically -a|--archive but not recursive.
 rsync_flags = '-' + ''.join([
@@ -44,8 +44,9 @@ rsync_flags = '-' + ''.join([
 
 ssh_cmd = ['ssh', '-i', key_path]
 ssh_cmd_str = ' '.join(str(s) for s in ssh_cmd)
-rsync_cmd = ['rsync', rsync_flags, '-e', ssh_cmd_str] + source_paths + [target_string]
+rsync_cmd = ['rsync', rsync_flags, '-e', ssh_cmd_str] + source_paths + [server_str]
 
 #print(' '.join(str(s) for s in rsync_cmd))
 
-subprocess.run(rsync_cmd)
+subprocess.run(rsync_cmd, cwd=build_dir)
+
