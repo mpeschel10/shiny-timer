@@ -47,6 +47,7 @@
         //  and also would require machinery for tracking if a sound should continue to play or not while we change selections.
     }
     sounds["silent"].loop = true;
+    var currentSound = sounds["silent"];
 
     // Error function if a sound fails to load.
     // Should remove the sound from the comboBox so user can't select it.
@@ -75,16 +76,19 @@
         }
     }
 
-    for (const path of soundPaths)
-    {
-        sounds[path] = new Audio("sounds/" + path);
-        sounds[path].addEventListener("error", () => { willDeleteSound(path); });
-        sounds[path].loop = true;
+    function loadSounds() {
+        for (const path of soundPaths)
+        {
+            sounds[path] = new Audio("sounds/" + path);
+            sounds[path].addEventListener("error", () => { willDeleteSound(path); });
+            sounds[path].loop = true;
+        }
     }
 
-    var currentSound = sounds["silent"];
-
     function init() {
+        comboSounds = document.getElementById('combo-sounds');
+        loadSounds(); // Call this asap for performance
+
         pClock = document.getElementById('p-clock');
 
         fieldHours = document.getElementById('field-hours');
@@ -95,8 +99,6 @@
         buttonStartPause = document.getElementById('button-start-pause');
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
-
-        comboSounds = document.getElementById('combo-sounds');
 
         for (let field of [fieldHours, fieldMinutes, fieldSeconds])
         {
