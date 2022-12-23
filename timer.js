@@ -67,6 +67,7 @@
             if (path === "silent")
                 continue;
             sounds[path] = new Audio("sounds/" + path);
+            sounds[path].preload = "none";
             sounds[path].addEventListener("error", () => { hideSound(path); });
             sounds[path].loop = true;
         }
