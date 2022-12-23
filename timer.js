@@ -1,3 +1,5 @@
+"use strict";
+
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
@@ -160,7 +162,7 @@
             // Preserve user selection while updating the field.
             for (let i = 0; i < fields.length; i++)
             {
-                field = fields[i];
+                let field = fields[i];
                 let s = field.selectionStart; let e = field.selectionEnd;
                 field.value = hms[i];
                 field.setSelectionRange(s, e);
@@ -211,7 +213,7 @@
         } else if (! reDigits.test(e.key)) {
             e.preventDefault();
         } else if (timer.state !== "wait_for_entry") {
-            onReset(e, resetInputs=false);
+            onReset(e, false);
         }
     }
 
@@ -237,7 +239,7 @@
             targetField.setSelectionRange(0, 0);
             e.preventDefault();
         } else if ((e.key === "Backspace" || e.key === "Delete") && timer.state !== "wait_for_entry") {
-            onReset(e, resetInputs=false);
+            onReset(e, false);
         }
     }
 
