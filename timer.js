@@ -9,6 +9,7 @@
     var buttonStartPause; var buttonReset; var buttonTest;
     var comboSounds;
     let buttonSoundAdd; let fileSoundAdd; let textSoundAdd;
+    let buttonSoundRemove;
 
     let intervalID; // Capitalize D because that's how it is in the docs
 
@@ -95,6 +96,7 @@
         buttonSoundAdd = document.getElementById('button-sound-add');
         fileSoundAdd = document.getElementById('file-sound-add');
         textSoundAdd = document.getElementById('text-sound-add');
+        buttonSoundRemove = document.getElementById("button-sound-remove");
 
         for (let field of [fieldHours, fieldMinutes, fieldSeconds])
         {
@@ -108,6 +110,7 @@
 
         fileSoundAdd.addEventListener('change', onFileSoundAddChange);
         buttonSoundAdd.addEventListener('click', onButtonSoundAdd);
+        buttonSoundRemove.addEventListener('click', onButtonSoundRemove);
 
         // Form data may persist over reloads,
         //  so update all the boxes.
@@ -371,6 +374,32 @@
 
         fileSoundAdd.value = "";
         fileSoundAdd.dispatchEvent(new Event("change"));
+    }
+
+    function onButtonSoundRemove(e) {
+        if (comboSounds.options.length <= 1) {
+            alert(
+                "Error: Only one sound left.\n" +
+                "This program is not designed to handle having no sounds.\n" +
+                "I refuse to discard the last one."
+            )
+            return;
+        }
+
+        let i = comboSounds.selectedIndex;
+        if (i + 1 < comboSounds.options.length)
+            comboSounds.selectedIndex = i + 1;
+        else
+            comboSounds.selectedIndex = i - 1;
+        comboSounds.dispatchEvent(new Event("change"));
+
+        let option = comboSounds.options[i];
+        console.log("Discarding option " + option.value);
+        comboSounds.remove(i);
+
+        let identifier = option.value;
+        sounds[identifier].pause(); // Should be redundant.
+        delete sounds[identifier]; // Free up space, I hope.
     }
 
     window.addEventListener('load', init, false);
