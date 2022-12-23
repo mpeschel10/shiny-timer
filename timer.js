@@ -6,6 +6,8 @@
     var fieldDummyBorder;
     var buttonStartPause; var buttonReset; var buttonTest;
     var comboSounds;
+    let buttonSoundAdd; let fileSoundAdd; let textSoundAdd;
+
     let intervalID; // Capitalize D because that's how it is in the docs
 
     var timer;
@@ -88,6 +90,10 @@
         buttonReset = document.getElementById('button-reset');
         buttonTest = document.getElementById('button-test');
 
+        buttonSoundAdd = document.getElementById('button-sound-add');
+        fileSoundAdd = document.getElementById('file-sound-add');
+        textSoundAdd = document.getElementById('text-sound-add');
+
         for (let field of [fieldHours, fieldMinutes, fieldSeconds])
         {
             field.addEventListener('keypress', onKeyPress);
@@ -98,11 +104,17 @@
         buttonReset.addEventListener('click', onReset);
         comboSounds.addEventListener('change', updateCurrentSound);
 
-        // All comboBox entries are associated with an Audio element; it is safe to updateCurrentSound.
-        // Necessary because currentSound is reset to "silent" on page load.
+        fileSoundAdd.addEventListener('change', onFileSoundAddChange);
+        buttonSoundAdd.addEventListener('click', onButtonSoundAdd);
+
+        // Form data may persist over reloads,
+        //  so update all the boxes.
+        onFileSoundAddChange();
         updateCurrentSound(); 
-        update(); // So clock updates immediately on page load
-        intervalID = setInterval(update, 500); // So if error, it might recover
+
+        // Update clock immediately on page load
+        update(); 
+        intervalID = setInterval(update, 500);
     }
 
     function secondsToHoursMinutesSeconds(seconds) {
@@ -294,6 +306,69 @@
             fieldDummyBorder.style.visibility = "visible";
         }
         // else if (timer.state === "rung")
+    }
+
+    function getMaxLength(a) {
+        let longest = 0;
+        for (let element of a)
+            if (element.length > longest)
+                longest = element.length;
+        return longest;
+    }
+
+    function onFileSoundAddChange(e) {
+        let suggestedNames = Array.from(fileSoundAdd.files).map(f => f.name);
+        textSoundAdd.value = suggestedNames.join("\n");
+
+        if (suggestedNames.length >= 1)
+            textSoundAdd.rows = suggestedNames.length;
+        else
+            textSoundAdd.rows = 1;
+
+        let longest = getMaxLength(suggestedNames) + 1;
+        if (longest >= 20)
+            textSoundAdd.cols = longest;
+        else
+            textSoundAdd.cols = 20;
+    }
+
+    function onButtonSoundAdd(e) {
+        let names = textSoundAdd.value.split('\n');
+        let files = fileSoundAdd.files;
+        if (names.length != files.length) {
+            alert(
+                "Error: Wrong number of names.\n" +
+                "Found " + names.length + " names for " + files.length + " files.\n" +
+                'You should have as many names in the "Name of Sound" textarea as you have files to add.\n' +
+                'Names should be separated by a "line break" by pressing the enter key.'
+            );
+            return;
+        }
+
+        // Iterate in reverse order, since we're prepending elements
+        //  so the order in the combobox is the same as in the textarea.
+        for (let i = files.length - 1; i >= 0; i--) {
+            let f = files[i]; let n = names[i];
+            if (n in sounds) {
+                alert(
+                    'Error: Duplicate sound name "' + n + '".\n' +
+                    "Either remove that sound first or choose a different name."
+                );
+                return;
+            }
+
+            let option = document.createElement("option");
+            option.appendChild(document.createTextNode(n));
+            option.value = n;
+
+            sounds[n] = new Audio(URL.createObjectURL(f));
+            comboSounds.prepend(option);
+        }
+        comboSounds.selectedIndex = 0;  // since we prepend new options, 0 is one of them.
+        comboSounds.dispatchEvent(new Event("change"));
+
+        fileSoundAdd.value = "";
+        fileSoundAdd.dispatchEvent(new Event("change"));
     }
 
     window.addEventListener('load', init, false);

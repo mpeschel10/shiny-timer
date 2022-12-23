@@ -26,9 +26,12 @@
             <label for="field-seconds">seconds</label>
 
          </div>
+
         <br>
         <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
         <input id="button-reset" name="button-reset" type="button" value="Reset"></input>
+
+        <br>
         <label for="combo-sounds">Alarm sound:</label>
         <select id="combo-sounds" name="combo-sounds">
             <option value="brrrring-loop.ogg">Alarm (Analog)</option>
@@ -52,7 +55,16 @@
             <option value="piano-ringtone-loop.ogg">Piano (Ringtone)</option>
             <option value="silent">Silent</option>
         </select>
+
+        <br>
+        <label for="file-sound-add">Add a sound:</label>
+        <input id="file-sound-add" name="file-sound-add" type="file" multiple></input>
+        <label for="text-sound-add">Name of sound:</label>
+        <textarea id="text-sound-add" name="text-sound-add" rows="1" placeholder="Choose a file first."></textarea>
+        <input id="button-sound-add" type="button" value="Add the sound"></input>
     </form>
+
+    <br>
     <a href="copyright">Copyright Notice</a>
 </body>
 </html>
