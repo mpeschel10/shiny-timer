@@ -1,3 +1,4 @@
+import itertools
 import sys, subprocess
 
 from pathlib import Path
@@ -9,7 +10,7 @@ flag_force = False
 def main():
     #global flag_force
     # For speed, this script only reencodes files if -f is present
-    for old_loop in sound_dir.glob("*-loop.wav"):
+    for old_loop in itertools.chain(sound_dir.glob("*-loop.wav"), sound_dir.glob("*-loop.mp3")):
         new_loop = old_loop.parent.joinpath(old_loop.stem + '.ogg')
         if flag_force or not new_loop.exists():
             # -i <input file> -filter:a<udio> 'loudnorm' -c<onvert>:a<udio> 'libvorbis' <output file>
