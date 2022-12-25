@@ -5,11 +5,13 @@
 
     var pClock;
     var fieldHours, fieldMinutes, fieldSeconds;
+    let timeFields;
     var fieldDummyBorder;
     var buttonStartPause; var buttonReset; var buttonTest;
     var comboSounds;
     let buttonSoundAdd; let fileSoundAdd; let textSoundAdd;
     let buttonSoundRemove;
+    let buttonURL; let fieldURL;
 
     let intervalID; // Capitalize D because that's how it is in the docs
 
@@ -98,6 +100,7 @@
         fieldHours = document.getElementById('field-hours');
         fieldMinutes = document.getElementById('field-minutes');
         fieldSeconds = document.getElementById('field-seconds');
+        timeFields = [fieldHours, fieldMinutes, fieldSeconds];
         fieldDummyBorder = document.getElementById("field-dummy-border");
 
         buttonStartPause = document.getElementById('button-start-pause');
@@ -109,10 +112,13 @@
         textSoundAdd = document.getElementById('text-sound-add');
         buttonSoundRemove = document.getElementById("button-sound-remove");
 
-        for (let field of [fieldHours, fieldMinutes, fieldSeconds])
+        buttonURL = document.getElementById("button-url");
+        fieldURL = document.getElementById("field-url");
+
+        for (let f of timeFields)
         {
-            field.addEventListener('keypress', onKeyPress);
-            field.addEventListener('keydown', onKeyDown);
+            f.addEventListener('keypress', onKeyPress);
+            f.addEventListener('keydown', onKeyDown);
         }
 
         buttonStartPause.addEventListener('click', onButtonStartPause);
@@ -122,6 +128,8 @@
         fileSoundAdd.addEventListener('change', onFileSoundAddChange);
         buttonSoundAdd.addEventListener('click', onButtonSoundAdd);
         buttonSoundRemove.addEventListener('click', onButtonSoundRemove);
+
+        buttonURL.addEventListener("click", onButtonURL);
 
         // Form data may persist over reloads,
         //  so update all the boxes.
@@ -151,6 +159,7 @@
         let selectedIndex = parameters.get("selectedIndex");
         if (selectedIndex !== null) {
             selectedIndex = parseInt(selectedIndex);
+            console.log("Setting selectedIndex to " + selectedIndex);
             comboSounds.selectedIndex = selectedIndex;
             comboSounds.dispatchEvent(new Event("change"));
             // Note that this can produce an invalid selection, causing currentSound = undefined.
@@ -159,7 +168,7 @@
 
         let resetTime = parameters.get("resetTime");
         if (resetTime !== null) {
-            resetTime = parseInt(resetTime);
+            resetTime = parseFloat(resetTime);
             resetTime = secondsToHoursMinutesSeconds(resetTime);
             timer.resetTime = resetTime;
             // The state stanza may invoke buttonStartPause.click(), and the fields will then
@@ -203,9 +212,20 @@
 
     }
 
+    function onButtonURL(e) {
+        // URL has four fields: resetTime, selectedIndex, state, and timeLeft.
+        let u = new URL(window.location);
+        let s = u.searchParams;
+        s.set("state", timer.state);
+        s.set("resetTime", parseTime(timeFields));
+        s.set("timeLeft", timer.timeLeft);
+        s.set("selectedIndex", comboSounds.selectedIndex);
+        fieldURL.value = u.toString();
+    }
+
     function secondsToHoursMinutesSeconds(seconds) {
         if (seconds < 0)
-            return "00:00:00";
+            return ["00", "00", "00"];
         seconds = Math.ceil(seconds);
         
         var hours = Math.floor(seconds / 3600);
@@ -242,14 +262,13 @@
         if (timer.state !== "wait_for_entry")
         {
             let hms = secondsToHoursMinutesSeconds(timer.timeLeft);
-            let fields = [fieldHours, fieldMinutes, fieldSeconds];
             // Preserve user selection while updating the field.
-            for (let i = 0; i < fields.length; i++)
+            for (let i = 0; i < timeFields.length; i++)
             {
-                let field = fields[i];
-                let s = field.selectionStart; let e = field.selectionEnd;
-                field.value = hms[i];
-                field.setSelectionRange(s, e);
+                let f = timeFields[i];
+                let s = f.selectionStart; let e = f.selectionEnd;
+                f.value = hms[i];
+                f.setSelectionRange(s, e);
             }
         }
 
@@ -332,12 +351,15 @@
         }
     }
 
-    function parseTime() {
+    function parseTime(fields) {
         try {
             // Multiply the strings by numbers to convert
             //  because for some incomprehenisble reason, "parseFloat"
             //  of empty string is NaN
-            var maybeSeconds = fieldHours.value * 3600 + fieldMinutes.value * 60 + fieldSeconds.value * 1;
+            let maybeSeconds = 0;
+            for (let f of fields) {
+                maybeSeconds = maybeSeconds * 60 + (f.value * 1);
+            }
             // I could have written something complicated to extract
             // a useable value no matter what,
             //  but I think it is safer to fire the alarm immediately
@@ -383,7 +405,7 @@
 
     function onButtonStartPause() {
         if (timer.state === "wait_for_entry") {
-            timer.timeLeft = parseTime();
+            timer.timeLeft = parseTime(timeFields);
             timer.resetTime = [
                 fieldHours.value, fieldMinutes.value, fieldSeconds.value
             ];
