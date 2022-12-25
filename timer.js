@@ -65,6 +65,9 @@
             if (comboSounds.options[i].value === path) {
                 console.log("Deleting combosound[" + i + "]: " + comboSounds.options[i]);
                 comboSounds.remove(i)
+                if (i <= comboSounds.selectedIndex && comboSounds.selectedIndex > 0) {
+                    comboSounds.selectedIndex -= 1;
+                }
                 break;
             }
         }
@@ -125,9 +128,79 @@
         onFileSoundAddChange();
         updateCurrentSound(); 
 
-        // Update clock immediately on page load
+        try {
+            applyParameters(new URLSearchParams(window.location.search));
+        } catch (e) {
+            console.error("Failed to apply url parameters of " + window.location.search);
+            console.error(e);
+        }
+
+        // Update clock and show parameters immediately on page load
         update(); 
         intervalID = setInterval(update, 500);
+    }
+
+    function applyParameters(parameters) {
+        // Problem: half the state is stored in the fieldHours etc and comboSounds,
+        //  and there's no dry way to change the state AND update the UI without firing events.
+        // Unfortunately, this function will have to be completely revised any time you change
+        //  the state model. Hopefully you won't have to, ya?
+
+        // Ok. This fn is a kludgy, stateful mess.
+        // First select the sound, which is nice and uncoupled.
+        let selectedIndex = parameters.get("selectedIndex");
+        if (selectedIndex !== null) {
+            selectedIndex = parseInt(selectedIndex);
+            comboSounds.selectedIndex = selectedIndex;
+            comboSounds.dispatchEvent(new Event("change"));
+            // Note that this can produce an invalid selection, causing currentSound = undefined.
+            // So I had to throw in undefined checks anyway. What a bother...
+        }
+
+        let resetTime = parameters.get("resetTime");
+        if (resetTime !== null) {
+            resetTime = parseInt(resetTime);
+            resetTime = secondsToHoursMinutesSeconds(resetTime);
+            timer.resetTime = resetTime;
+            // The state stanza may invoke buttonStartPause.click(), and the fields will then
+            //  override timer.resetTime.
+            // It's ok bc. resetFields duplicates the state from timer.resetTime to the fields.
+            resetFields();
+        }
+
+        // state parameter is handled by just faking a bunch of user inputs.
+        // timeLeft stanza SHOULD be after state stanza, to override endTime set here.
+        let state = parameters.get("state");
+        if (state !== null) {
+            if (state === "wait-for-entry") {
+            } else if (state === "running") {
+                buttonStartPause.click(); // running
+            } else if (state === "paused") {
+                buttonStartPause.click(); // running
+                buttonStartPause.click(); // paused
+            } else if (state === "ringing") {
+                buttonStartPause.click(); // running
+                timer.endTime = 0;
+                updateTimer();            // ringing
+            } else if (state === "rung") {
+                buttonStartPause.click(); // running
+                timer.endTime = 0;
+                updateTimer();            // ringing
+                buttonStartPause.click(); // rung
+            } else {
+                console.error("Bad parameter state=" + state);
+            }
+        }
+
+        // timeLeft should follow state stanza, to override it if e.g. state=rung&timeLeft=14
+        let timeLeft = parameters.get('timeLeft');
+        if (timeLeft !== null) {
+            timeLeft = parseInt(timeLeft);
+            timer.timeLeft = timeLeft;
+            timer.endTime = Date.now() + timeLeft * 1000;
+            // updateDisplay() should be called after this applyParameters anyway...
+        }
+
     }
 
     function secondsToHoursMinutesSeconds(seconds) {
@@ -180,20 +253,22 @@
             }
         }
 
-        if (timer.state === "ringing" && currentSound.paused) {
-            console.log('Ring the bell!');
-            if (currentSound.paused) {
-                currentSound.currentTime = 0;
-                currentSound.play().catch(
-                    (e) => {
-                        console.log("Could not play sound " + currentSound.src);
-                        console.log(e);
-                        // In theory, as sounds fail to load, comboSounds will eventually have only good sounds in it.
-                        // So updateCurrentSound will after enough iterations make currentSound good,
-                        //  so we will (eventually) ring, which is failing safe, unless no sounds load at all.
-                        updateCurrentSound();
-                    }
-                );
+        if (timer.state === "ringing") {
+            if (currentSound) {
+                if(currentSound.paused) {
+                    console.log('Ring the bell!');
+                    currentSound.currentTime = 0;
+                    currentSound.play().catch(
+                        (e) => {
+                            console.log("Could not play sound " + currentSound.src);
+                            console.log(e);
+                            // In theory, as sounds fail to load, comboSounds will eventually
+                            //  have only good sounds in it. And since hideSound() calls
+                            //  updateCurrentSound, we will eventually ring, which is failing safe.
+                            //  As long as silent is the last song...
+                        }
+                    );
+                }
             }
         }
     }
@@ -205,8 +280,11 @@
 
     function updateCurrentSound() {
         var shouldPlay = false;
-        shouldPlay = !currentSound.paused;
-        currentSound.pause();
+        if (currentSound) {
+            shouldPlay = !currentSound.paused;
+            currentSound.pause();
+        }
+
         currentSound = sounds[comboSounds.value];
         if (shouldPlay) {
             currentSound.currentTime = 0;
@@ -272,19 +350,31 @@
         }
     }
 
-    function onReset(e, resetInputs=true) {
+    function resetFields() {
+        fieldHours.value = timer.resetTime[0];
+        fieldMinutes.value = timer.resetTime[1];
+        fieldSeconds.value = timer.resetTime[2];
+    }
+
+    function onReset(e, shouldResetFields=true) {
         for (const key of Object.keys(sounds)) {
             if (sounds[key]) { // Should always be true.
                 sounds[key].pause();
             }
         }
-        currentSound.pause() // Hopefully redundant.
+        if (currentSound) {
+            currentSound.pause() // Hopefully redundant.
+        };
+
+        if (comboSounds.selectedIndex < 0) {
+            comboSounds.selectedIndex = 0;
+        } else if (comboSounds.selectedIndex >= comboSounds.options.length) {
+            comboSounds.selectedIndex = 0; // last sound is silent, so select first sound instead.
+        }
 
         buttonStartPause.value = "Start";
-        if (resetInputs) {
-            fieldHours.value = timer.resetTime[0];
-            fieldMinutes.value = timer.resetTime[1];
-            fieldSeconds.value = timer.resetTime[2];
+        if (shouldResetFields) {
+            resetFields();
         }
         timer = makeTimer(); // timer.state = "wait_for_entry";
         updateCurrentSound();   // Hopefully redundant.
@@ -315,7 +405,8 @@
             buttonStartPause.value = "Start";
         } else if (timer.state === "ringing") {
             timer.state = "rung";
-            currentSound.pause();
+            if (currentSound)
+                currentSound.pause();
             fieldDummyBorder.style.visibility = "visible";
         }
         // else if (timer.state === "rung")
