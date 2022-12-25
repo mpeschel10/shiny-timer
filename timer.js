@@ -13,6 +13,11 @@
 
     let intervalID; // Capitalize D because that's how it is in the docs
 
+    const DB_NAME = 'shiny-timer-sounds';
+    const DB_VERSION = 1;
+    const DB_STORE_NAME = 'sounds';
+    let database;
+
     var timer;
     function makeTimer() {
         return {
@@ -43,6 +48,7 @@
     var sounds = {
         "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
     }
+    var defaultSounds = {"silent":true};
 
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
@@ -68,6 +74,7 @@
     function loadSounds() {
         for (let option of comboSounds) {
             let path = option.value;
+            defaultSounds[path] = true;
             // "silent" sound is loaded immediately after <head> element; loadSounds isn't responsible.
             if (path === "silent")
                 continue;
@@ -81,6 +88,7 @@
     function init() {
         comboSounds = document.getElementById('combo-sounds');
         loadSounds(); // Call this asap for performance
+        openDatabase();
 
         pClock = document.getElementById('p-clock');
 
@@ -337,6 +345,66 @@
             textSoundAdd.cols = 20;
     }
 
+    function openDatabase() {
+        let request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onsuccess = function(e) {
+            database = e.currentTarget.result;
+            let transaction = database.transaction([DB_STORE_NAME], "readonly");
+            let store = transaction.objectStore(DB_STORE_NAME);
+            let request = store.getAllKeys();
+
+            request.onsuccess = function(e) {
+                let keys = e.currentTarget.result;
+                let transaction = database.transaction([DB_STORE_NAME], "readonly");
+                let store = transaction.objectStore(DB_STORE_NAME);
+                for (let key of keys) {
+                    let request = store.get(key);
+                    request.onsuccess = function(e) {
+                        let result = e.currentTarget.result;
+                        addNamedSound(result.id, result.file);
+                    };
+                    request.onerror = function(e) {
+                        console.log("Failed to load sound.");
+                        console.error(e);
+                    };
+                }
+            };
+
+            request.onerror = function(e) {
+                console.log("Failed to get names/keys for loading stored sounds.");
+                console.error(e);
+            };
+        };
+
+        request.onerror = function(e) {
+            console.error("Failed to load indexedDB.");
+            console.error(e.currentTarget);
+        };
+
+        request.onupgradeneeded = function(e) {
+            console.log("Upgrade needed (presumably also first run of database?");
+            let database = e.currentTarget.result;
+            if (!database.objectStoreNames.contains(DB_STORE_NAME))
+            {
+                console.log("Creating store " + DB_STORE_NAME);
+                let store = database.createObjectStore(DB_STORE_NAME, {keyPath:"id", autoIncrement:true});
+            }
+        };
+    }
+
+    function addNamedSound(name, file) {
+        console.log(name, file);
+        let option = document.createElement("option");
+        option.appendChild(document.createTextNode(name));
+        option.value = name;
+
+        sounds[name] = new Audio(URL.createObjectURL(file));
+        comboSounds.prepend(option);
+        // I considered doing comboSounds.selectedIndex = 0 here
+        //  but I'll prob. add a url parameter to set selected song
+        //  so don't overwrite that preemptively lol.
+    }
+
     function onButtonSoundAdd(e) {
         let names = textSoundAdd.value.split('\n');
         let files = fileSoundAdd.files;
@@ -350,8 +418,9 @@
             return;
         }
 
-        // Iterate in reverse order, since we're prepending elements
+        // Iterate in reverse order,
         //  so the order in the combobox is the same as in the textarea.
+        let objectStore = database.transaction([DB_STORE_NAME], "readwrite").objectStore(DB_STORE_NAME);
         for (let i = files.length - 1; i >= 0; i--) {
             let f = files[i]; let n = names[i];
             if (n in sounds) {
@@ -362,14 +431,15 @@
                 return;
             }
 
-            let option = document.createElement("option");
-            option.appendChild(document.createTextNode(n));
-            option.value = n;
-
-            sounds[n] = new Audio(URL.createObjectURL(f));
-            comboSounds.prepend(option);
+            let object = {id:n, file:f};
+            let request = objectStore.add(object);
+            request.onerror = function(e) {
+                // Note if people add sounds from multiple tabs we'll get a duplicate key error.
+                console.error(e);
+            };
+            addNamedSound(n, f);
         }
-        comboSounds.selectedIndex = 0;  // since we prepend new options, 0 is one of them.
+        comboSounds.selectedIndex = 0;  // since we prepend new options, first option will be new
         comboSounds.dispatchEvent(new Event("change"));
 
         fileSoundAdd.value = "";
@@ -397,9 +467,17 @@
         console.log("Discarding option " + option.value);
         comboSounds.remove(i);
 
-        let identifier = option.value;
-        sounds[identifier].pause(); // Should be redundant.
-        delete sounds[identifier]; // Free up space, I hope.
+        let id = option.value;
+        sounds[id].pause(); // Should be redundant.
+        delete sounds[id]; // Free up space, I hope.
+        if (!(id in defaultSounds)) {
+            console.log("Deleting from IndexedDB (persistent storage)...");
+            let objectStore = database.transaction([DB_STORE_NAME], "readwrite").objectStore(DB_STORE_NAME);
+            objectStore.delete(id).onerror = function (e) {
+                console.error(e);
+            };
+        }
+
     }
 
     window.addEventListener('load', init, false);
