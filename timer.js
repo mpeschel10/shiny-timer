@@ -19,6 +19,7 @@
     const DB_VERSION = 1;
     const DB_STORE_NAME = 'sounds';
     let database;
+    let databasePromise;
 
     var timer;
     function makeTimer() {
@@ -76,7 +77,47 @@
         updateCurrentSound();
     }
 
-    function loadSounds() {
+    function fetchIDBKeys(database) {
+        return new Promise(function(resolve, reject) {
+            let request = database.transaction([DB_STORE_NAME], "readonly").objectStore(DB_STORE_NAME).getAllKeys();
+            request.onsuccess = function(e) {
+                resolve(e.currentTarget.result);
+            };
+            request.onerror = function(e) {
+                console.error("Failed to get names/keys for loading stored sounds.");
+                reject(e);
+            };
+        });
+    }
+
+    // Returns a promise which will resolve when all sounds are loaded.
+    function loadIDBSoundsFromKeys(database, keys) {
+        let transaction = database.transaction([DB_STORE_NAME], "readonly");
+        let store = transaction.objectStore(DB_STORE_NAME);
+        return Promise.all(keys.map(key => 
+            new Promise(function(resolve, reject) {
+                let request = store.get(key);
+                request.onsuccess = function(e) {
+                    let result = e.currentTarget.result;
+                    addNamedSound(result.id, result.file);
+                    resolve(result.id);
+                };
+                request.onerror = function(e) {
+                    console.error("Failed to load sound.");
+                    console.error(e);
+                    reject(e);
+                };
+            })
+        ));
+    }
+
+    // Returns a promise which will resolve when all sounds are loaded.
+    async function loadIDBSounds(database) {
+        let keys = await fetchIDBKeys(database);
+        return loadIDBSoundsFromKeys(database, keys);
+    }
+
+    function loadDefaultSounds() {
         for (let option of comboSounds) {
             let path = option.value;
             defaultSounds[path] = true;
@@ -85,15 +126,16 @@
                 continue;
             sounds[path] = new Audio("sounds/" + path);
             sounds[path].preload = "none";
-            sounds[path].addEventListener("error", () => { hideSound(path); });
+            sounds[path].addEventListener("error", e => hideSound(path));
             sounds[path].loop = true;
         }
     }
 
     function init() {
         comboSounds = document.getElementById('combo-sounds');
-        loadSounds(); // Call this asap for performance
-        openDatabase();
+        loadDefaultSounds();
+        databasePromise = fetchDatabase();
+        let loadingSoundsPromise = databasePromise.then(loadIDBSounds);
 
         pClock = document.getElementById('p-clock');
 
@@ -136,12 +178,11 @@
         onFileSoundAddChange();
         updateCurrentSound(); 
 
-        try {
-            applyParameters(new URLSearchParams(window.location.search));
-        } catch (e) {
-            console.error("Failed to apply url parameters of " + window.location.search);
-            console.error(e);
-        }
+        // Note applyParameters is performed after all our elements varaiables (buttonReset etc)
+        //  have been acquired.
+        loadingSoundsPromise.then(loadedSounds =>
+            applyParameters(new URLSearchParams(window.location.search))
+        ).catch(console.error);
 
         // Update clock and show parameters immediately on page load
         update(); 
@@ -458,51 +499,30 @@
             textSoundAdd.cols = 20;
     }
 
-    function openDatabase() {
-        let request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onsuccess = function(e) {
-            database = e.currentTarget.result;
-            let transaction = database.transaction([DB_STORE_NAME], "readonly");
-            let store = transaction.objectStore(DB_STORE_NAME);
-            let request = store.getAllKeys();
+    function fetchDatabase() {
+        return new Promise(function(resolve, reject) {
+            let databaseRequest = indexedDB.open(DB_NAME, DB_VERSION);
+            databaseRequest.onsuccess = (e) => {
+                database = databaseRequest.result;
+                resolve(database);
+            };
 
-            request.onsuccess = function(e) {
-                let keys = e.currentTarget.result;
-                let transaction = database.transaction([DB_STORE_NAME], "readonly");
-                let store = transaction.objectStore(DB_STORE_NAME);
-                for (let key of keys) {
-                    let request = store.get(key);
-                    request.onsuccess = function(e) {
-                        let result = e.currentTarget.result;
-                        addNamedSound(result.id, result.file);
-                    };
-                    request.onerror = function(e) {
-                        console.log("Failed to load sound.");
-                        console.error(e);
-                    };
+            databaseRequest.onerror = (e) => {
+                console.error("Failed to load indexedDB.");
+                console.error(e.currentTarget);
+                reject(e);
+            };
+
+            databaseRequest.onupgradeneeded = function(e) {
+                console.log("Upgrade needed (presumably also first run of database?");
+                let database = e.currentTarget.result;
+                if (!database.objectStoreNames.contains(DB_STORE_NAME))
+                {
+                    console.log("Creating store " + DB_STORE_NAME);
+                    let store = database.createObjectStore(DB_STORE_NAME, {keyPath:"id", autoIncrement:true});
                 }
             };
-
-            request.onerror = function(e) {
-                console.log("Failed to get names/keys for loading stored sounds.");
-                console.error(e);
-            };
-        };
-
-        request.onerror = function(e) {
-            console.error("Failed to load indexedDB.");
-            console.error(e.currentTarget);
-        };
-
-        request.onupgradeneeded = function(e) {
-            console.log("Upgrade needed (presumably also first run of database?");
-            let database = e.currentTarget.result;
-            if (!database.objectStoreNames.contains(DB_STORE_NAME))
-            {
-                console.log("Creating store " + DB_STORE_NAME);
-                let store = database.createObjectStore(DB_STORE_NAME, {keyPath:"id", autoIncrement:true});
-            }
-        };
+        });
     }
 
     function addNamedSound(name, file) {
