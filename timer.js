@@ -18,7 +18,6 @@
     const DB_NAME = 'shiny-timer-sounds';
     const DB_VERSION = 1;
     const DB_STORE_NAME = 'sounds';
-    let database;
     let databasePromise;
 
     var timer;
@@ -499,12 +498,15 @@
             textSoundAdd.cols = 20;
     }
 
+    async function fetchObjectStore(mode) {
+        return (await databasePromise).transaction([DB_STORE_NAME], mode).objectStore(DB_STORE_NAME);
+    }
+
     function fetchDatabase() {
         return new Promise(function(resolve, reject) {
             let databaseRequest = indexedDB.open(DB_NAME, DB_VERSION);
             databaseRequest.onsuccess = (e) => {
-                database = databaseRequest.result;
-                resolve(database);
+                resolve(databaseRequest.result);
             };
 
             databaseRequest.onerror = (e) => {
@@ -538,7 +540,7 @@
         //  so don't overwrite that preemptively lol.
     }
 
-    function onButtonSoundAdd(e) {
+    async function onButtonSoundAdd(e) {
         let names = textSoundAdd.value.split('\n');
         let files = fileSoundAdd.files;
         if (names.length != files.length) {
@@ -553,7 +555,7 @@
 
         // Iterate in reverse order,
         //  so the order in the combobox is the same as in the textarea.
-        let objectStore = database.transaction([DB_STORE_NAME], "readwrite").objectStore(DB_STORE_NAME);
+        let objectStore = await fetchObjectStore("readwrite");
         for (let i = files.length - 1; i >= 0; i--) {
             let f = files[i]; let n = names[i];
             if (n in sounds) {
@@ -605,10 +607,11 @@
         delete sounds[id]; // Free up space, I hope.
         if (!(id in defaultSounds)) {
             console.log("Deleting from IndexedDB (persistent storage)...");
-            let objectStore = database.transaction([DB_STORE_NAME], "readwrite").objectStore(DB_STORE_NAME);
-            objectStore.delete(id).onerror = function (e) {
-                console.error(e);
-            };
+            fetchObjectStore("readwrite").then(function(objectStore) {
+                objectStore.delete(id).onerror = function (e) {
+                    console.error(e);
+                };
+            });
         }
 
     }
