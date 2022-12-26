@@ -188,6 +188,16 @@
         intervalID = setInterval(update, 500);
     }
 
+    function getOptionsIndex(selectedPath) {
+        for (let i = 0; i < comboSounds.options.length; i++) {
+            let option = comboSounds.options[i];
+            if(option.value === selectedPath) {
+                return i;
+            }
+        }
+        throw "Could not find selectedPath " + selectedPath;
+    }
+
     function applyParameters(parameters) {
         // Problem: half the state is stored in the fieldHours etc and comboSounds,
         //  and there's no dry way to change the state AND update the UI without firing events.
@@ -196,14 +206,16 @@
 
         // Ok. This fn is a kludgy, stateful mess.
         // First select the sound, which is nice and uncoupled.
-        let selectedIndex = parameters.get("selectedIndex");
-        if (selectedIndex !== null) {
-            selectedIndex = parseInt(selectedIndex);
-            console.log("Setting selectedIndex to " + selectedIndex);
-            comboSounds.selectedIndex = selectedIndex;
-            comboSounds.dispatchEvent(new Event("change"));
-            // Note that this can produce an invalid selection, causing currentSound = undefined.
-            // So I had to throw in undefined checks anyway. What a bother...
+        let selectedPath = parameters.get("selectedPath");
+        if (selectedPath !== null) {
+            try {
+                let selectedIndex = getOptionsIndex(selectedPath);
+                console.log("Setting selectedIndex to " + selectedIndex);
+                comboSounds.selectedIndex = selectedIndex;
+                comboSounds.dispatchEvent(new Event("change"));
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         let resetTime = parameters.get("resetTime");
@@ -221,7 +233,7 @@
         // timeLeft stanza SHOULD be after state stanza, to override endTime set here.
         let state = parameters.get("state");
         if (state !== null) {
-            if (state === "wait-for-entry") {
+            if (state === "wait_for_entry") {
             } else if (state === "running") {
                 buttonStartPause.click(); // running
             } else if (state === "paused") {
@@ -259,7 +271,7 @@
         s.set("state", timer.state);
         s.set("resetTime", parseTime(timeFields));
         s.set("timeLeft", timer.timeLeft);
-        s.set("selectedIndex", comboSounds.selectedIndex);
+        s.set("selectedPath", comboSounds.value);
         fieldURL.value = u.toString();
     }
 
