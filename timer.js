@@ -270,7 +270,8 @@
         let s = u.searchParams;
         s.set("state", timer.state);
         s.set("resetTime", parseTime(timeFields));
-        s.set("timeLeft", timer.timeLeft);
+        if (timer.timeLeft !== 0)
+            s.set("timeLeft", timer.timeLeft);
         s.set("selectedPath", comboSounds.value);
         fieldURL.value = u.toString();
     }
