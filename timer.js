@@ -556,7 +556,11 @@
     async function onButtonSoundAdd(e) {
         let names = textSoundAdd.value.split('\n');
         let files = fileSoundAdd.files;
-        if (names.length != files.length) {
+        if (files.length === 0) {
+            alert("Error: No files selected to add. Click the browse button to add a file.");
+            return;
+        }
+        if (names.length !== files.length) {
             alert(
                 "Error: Wrong number of names.\n" +
                 "Found " + names.length + " names for " + files.length + " files.\n" +
