@@ -1,0 +1,75 @@
+
+Next:
+tests
+    add a sound
+    remove a sound
+    automated unit testing
+make the page pretty
+    field-dummy-border unstable; replace with normal border (span?)
+    colors?
+    center, larger text
+    get T's feedback
+    move current time to bottom, smaller text
+    ribbon?
+    instead of zero-padded two digits display, just one digit?
+    Put the sound managment stuff in a dialogue or box or something
+CentOS best practices email
+    Forbid .. "directory traversal attack"
+    non-reused password
+retrim audio elements--most of these loops should be WAY shorter.
+Test cross platform
+    looks bad on older firefox I guess?
+    apple?
+    android!!!
+    chromium, chrome
+    do browsers honor preload requirements?
+remove redundant currentSound.paused check from updateDisplay()
+if currentSound.play failse in updateDisplay, cycle through combo-sounds.options by combo-sounds.selectedIndex = i + 1 % o.lenght
+rename "wait-for-entry" something descriptive
+warn user on making a url for state=ringing that autoplay may be forbidden
+update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
+convert to typescript ffs
+
+
+Later:
+change all ' to "
+clean up logging
+descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
+My database transactions involve a lot of nesting. Can I make them into "thenable" chains? Promises and async await stuff? Research.
+integrate indexedDB sound loading with the "loadSounds()" function? (Inconvenient right now. Maybe when I learn async/thenable)
+Make error messages nice (not just alerts)
+Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
+handle when quota is exceeded
+option to clear indexedDB all at once
+add mp3s for safari
+
+Maybe:
+misc. accessibility?
+    aria roles - label button-start-pause as switch functionality.
+    firefox accessibility helper
+Persist discarded default sounds.
+    Add button to reset discarded default sounds
+preserve order across page loads
+option to reorder/rename the sounds
+show less sounds initially? A little overwhelming.
+handle when people add songs in multiple tabs (should propogate, or at least raise appropriate alert/error)
+handle having indexedDB open in multiple tabs with version update
+lazy loading for audio files in indexeddb
+Multiple timers
+    Button add a timer
+    Button delete a timer
+Long term alarms
+Save alarms for next time (local storage or whatevs)
+Animations
+"Rebuild" static pages via python script or something
+    Flask templating?
+    Names of sounds, for example.
+Tick speed is slightly imprecise. Occasionally, clock will appear to double a tick or skip a tick. Consider fixing that (heavy machinery):
+    Optimal solution is probably to tick once per second, centered on the half second mark, with a negative feedback loop to fps-style adjust sleep time to remain there.
+    Almost certainly not worth the effort.
+Proper solution for detecting when the user is trying to change the inputs for the anything->wait_for_input state change.
+    Specifically, we now listen specifically for digit keypresses and delete or backspace keydowns.
+    But you can change the timer other ways! E.g. pasting. So it would be best to listen for true changes. For every keydown, record the state of the entry. Then when keyup, if entry.value is different, we know the user is inputing something somehow, and we should pause.
+test debian copyright notice (get linter?)
+
+
