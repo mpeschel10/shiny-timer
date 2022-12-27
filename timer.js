@@ -95,16 +95,22 @@
     function loadIDBSoundsFromKeys(database, keys) {
         let transaction = database.transaction([DB_STORE_NAME], "readonly");
         let store = transaction.objectStore(DB_STORE_NAME);
-        return Promise.all(keys.map(key => 
+        return Promise.allSettled(keys.map(key => 
             new Promise(function(resolve, reject) {
                 let request = store.get(key);
                 request.onsuccess = function(e) {
-                    let result = e.currentTarget.result;
-                    addNamedSound(result.id, result.file);
-                    resolve(result.id);
+                    try {
+                        let result = e.currentTarget.result;
+                        addNamedSound(result.id, result.file);
+                        resolve(result.id);
+                    } catch (e) {
+                        console.error("Failed to load sound " + key);
+                        console.error(e);
+                        reject(e);
+                    }
                 };
                 request.onerror = function(e) {
-                    console.error("Failed to load sound.");
+                    console.error("Failed to load sound " + key);
                     console.error(e);
                     reject(e);
                 };
@@ -632,8 +638,8 @@
             return;
         }
 
+        let i = comboSounds.selectedIndex;
         if (!launchPlayLock) {
-            let i = comboSounds.selectedIndex;
             if (i + 1 < comboSounds.options.length)
                 comboSounds.selectedIndex = i + 1;
             else
