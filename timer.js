@@ -294,12 +294,21 @@
         return [hours, minutes, seconds];
     }
 
+    async function launchPlay() {
+        if (currentSound)
+            currentSound.play().catch(function(e) {
+                console.error("Could not play sound!");
+                console.error(e);
+            });
+    }
+
     function updateTimer() {
         if (timer.state === "running") {
             timer.timeLeft = (timer.endTime - Date.now()) / 1000;
             if (timer.timeLeft < 0) {
                 timer.timeLeft = 0;
                 timer.state = "ringing";
+                launchPlay();
                 buttonStartPause.value = "Ok";
             }
         }
@@ -322,25 +331,6 @@
                 let s = f.selectionStart; let e = f.selectionEnd;
                 f.value = hms[i];
                 f.setSelectionRange(s, e);
-            }
-        }
-
-        if (timer.state === "ringing") {
-            if (currentSound) {
-                if(currentSound.paused) {
-                    console.log('Ring the bell!');
-                    currentSound.currentTime = 0;
-                    currentSound.play().catch(
-                        (e) => {
-                            console.log("Could not play sound " + currentSound.src);
-                            console.log(e);
-                            // In theory, as sounds fail to load, comboSounds will eventually
-                            //  have only good sounds in it. And since hideSound() calls
-                            //  updateCurrentSound, we will eventually ring, which is failing safe.
-                            //  As long as silent is the last song...
-                        }
-                    );
-                }
             }
         }
     }
