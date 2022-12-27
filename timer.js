@@ -14,6 +14,7 @@
     let buttonURL; let fieldURL;
 
     let intervalID; // Capitalize D because that's how it is in the docs
+    let launchPlayLock = false; // hideSound normally updates index as it goes; forbid that during launchPlay.
 
     const DB_NAME = 'shiny-timer-sounds';
     const DB_VERSION = 1;
@@ -65,15 +66,16 @@
         console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
         for (let i = 0; i < comboSounds.length; i++) {
             if (comboSounds.options[i].value === path) {
-                console.log("Deleting combosound[" + i + "]: " + comboSounds.options[i]);
+                console.log("Deleting comboSound[" + i + "]: " + comboSounds.options[i].value);
                 comboSounds.remove(i)
-                if (i <= comboSounds.selectedIndex && comboSounds.selectedIndex > 0) {
+                if (!launchPlayLock && i <= comboSounds.selectedIndex && comboSounds.selectedIndex > 0) {
                     comboSounds.selectedIndex -= 1;
                 }
                 break;
             }
         }
-        updateCurrentSound();
+        if (!launchPlayLock)
+            updateCurrentSound();
     }
 
     function fetchIDBKeys(database) {
@@ -205,16 +207,18 @@
         //  the state model. Hopefully you won't have to, ya?
 
         // Ok. This fn is a kludgy, stateful mess.
-        // First select the sound, which is nice and uncoupled.
-        let selectedPath = parameters.get("selectedPath");
-        if (selectedPath !== null) {
-            try {
-                let selectedIndex = getOptionsIndex(selectedPath);
-                console.log("Setting selectedIndex to " + selectedIndex);
-                comboSounds.selectedIndex = selectedIndex;
-                comboSounds.dispatchEvent(new Event("change"));
-            } catch (e) {
-                console.error(e);
+        // First select the sound, which is less coupled than the rest.
+        if (!launchPlayLock) {
+            let selectedPath = parameters.get("selectedPath");
+            if (selectedPath !== null) {
+                try {
+                    let selectedIndex = getOptionsIndex(selectedPath);
+                    console.log("Setting selectedIndex to " + selectedIndex);
+                    comboSounds.selectedIndex = selectedIndex;
+                    comboSounds.dispatchEvent(new Event("change"));
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
 
@@ -295,11 +299,41 @@
     }
 
     async function launchPlay() {
-        if (currentSound)
-            currentSound.play().catch(function(e) {
-                console.error("Could not play sound!");
-                console.error(e);
-            });
+        try {
+            launchPlayLock = true;
+
+            if (currentSound) {
+                try {
+                    currentSound.currentTime = 0;
+                    await currentSound.play();
+                    return;
+                } catch (e) {
+                    console.error("Could not play sound:", e);
+                }
+            }
+
+            let candidateSounds = Array.from(comboSounds.options).map(o => [o.value, sounds[o.value]]);
+            for (let name_candidate of candidateSounds) {
+                let candidate = name_candidate[1];
+                if (candidate) {
+                    try {
+                        currentSound = candidate;
+                        currentSound.currentTime = 0;
+                        await currentSound.play();
+                        let name = name_candidate[0];
+                        let i = getOptionsIndex(name);
+                        console.log("Selecting sound " + name + " at index " + i);
+                        comboSounds.selectedIndex = i;
+                        return;
+                    } catch (e) {
+                        candidate.pause();
+                        console.error("Could not play sound:", e);
+                    }
+                }
+            }
+        } finally {
+            launchPlayLock = false;
+        }
     }
 
     function updateTimer() {
@@ -348,7 +382,7 @@
         }
 
         currentSound = sounds[comboSounds.value];
-        if (shouldPlay) {
+        if (shouldPlay && currentSound) {
             currentSound.currentTime = 0;
             currentSound.play();
         }
@@ -431,6 +465,7 @@
             currentSound.pause() // Hopefully redundant.
         };
 
+        // ignore launchPlayLock
         if (comboSounds.selectedIndex < 0) {
             comboSounds.selectedIndex = 0;
         } else if (comboSounds.selectedIndex >= comboSounds.options.length) {
@@ -538,9 +573,6 @@
 
         sounds[name] = new Audio(URL.createObjectURL(file));
         comboSounds.prepend(option);
-        // I considered doing comboSounds.selectedIndex = 0 here
-        //  but I'll prob. add a url parameter to set selected song
-        //  so don't overwrite that preemptively lol.
     }
 
     async function onButtonSoundAdd(e) {
@@ -581,8 +613,10 @@
             };
             addNamedSound(n, f);
         }
-        comboSounds.selectedIndex = 0;  // since we prepend new options, first option will be new
-        comboSounds.dispatchEvent(new Event("change"));
+        if (!launchPlayLock) {
+            comboSounds.selectedIndex = 0;  // since we prepend new options, first option will be new
+            comboSounds.dispatchEvent(new Event("change"));
+        }
 
         fileSoundAdd.value = "";
         fileSoundAdd.dispatchEvent(new Event("change"));
@@ -598,12 +632,14 @@
             return;
         }
 
-        let i = comboSounds.selectedIndex;
-        if (i + 1 < comboSounds.options.length)
-            comboSounds.selectedIndex = i + 1;
-        else
-            comboSounds.selectedIndex = i - 1;
-        comboSounds.dispatchEvent(new Event("change"));
+        if (!launchPlayLock) {
+            let i = comboSounds.selectedIndex;
+            if (i + 1 < comboSounds.options.length)
+                comboSounds.selectedIndex = i + 1;
+            else
+                comboSounds.selectedIndex = i - 1;
+            comboSounds.dispatchEvent(new Event("change"));
+        }
 
         let option = comboSounds.options[i];
         console.log("Discarding option " + option.value);
