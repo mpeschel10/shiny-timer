@@ -10,6 +10,7 @@ server_str = 'root@mpeschel10.com:/var/www/timer'
 
 whitelist = [
     'sounds/*.ogg',
+    'icons/clock.png',
     'timer.html',
     'timer.js',
     'timer.css',
