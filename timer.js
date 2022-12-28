@@ -1,6 +1,8 @@
 "use strict";
 
-(() => {
+const SHINY_TIMER_DEBUG = true;
+
+(async() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
     var pClock;
@@ -52,6 +54,26 @@
         "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
     }
     var defaultSounds = {"silent":true};
+
+    async function testSilent() {
+        console.assert(sounds["silent"].paused, "Expected 'silent' to be initially paused.");
+        try {
+            await sounds["silent"].play();
+        } catch (e) {
+            console.error("Unit test play 'silent' failed:", e);
+        }
+        console.assert(!sounds["silent"].paused, "Expected 'silent' to be playing after playing it.");
+        try {
+            await sounds["silent"].pause();
+        } catch(e) {
+            console.error("Unit test pause 'silent' failed:", e);
+        }
+        console.assert(sounds["silent"].paused, "Expected 'silent' to be paused after pausing it.");
+    }
+
+    if (SHINY_TIMER_DEBUG) {
+        await testSilent();
+    }
 
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
