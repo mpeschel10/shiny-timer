@@ -15,6 +15,8 @@ def main():
         if flag_force or not new_loop.exists():
             # -i <input file> -filter:a<udio> 'loudnorm' -c<onvert>:a<udio> 'libvorbis' <output file>
             cmd = ['ffmpeg', '-i', old_loop, '-filter:a', 'loudnorm', '-c:a', 'libvorbis', new_loop]
+            if flag_force:
+                cmd += ['-y']
             #print('I will run {}'.format(' '.join(str(c) for c in cmd)))
             subprocess.run(cmd)
 

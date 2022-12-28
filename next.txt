@@ -1,10 +1,17 @@
 
 Next:
-tests
-    add a sound
-    remove a sound
-    automated unit testing
+retrim audio elements--most of these loops should be WAY shorter.
+firefox accessibility helper
+Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
+    descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
+    handle when quota is exceeded
+make variable names more consistent
+    rename "wait-for-entry" something descriptive
+    update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
+    change all ' to "
+    clean up logging
 make the page pretty
+    Make error messages nice (not just alerts)
     field-dummy-border unstable; replace with normal border (span?)
     colors?
     center, larger text
@@ -13,40 +20,36 @@ make the page pretty
     ribbon?
     instead of zero-padded two digits display, just one digit?
     Put the sound managment stuff in a dialogue or box or something
+warn user on making a url for state=ringing that autoplay may be forbidden
 CentOS best practices email
     Forbid .. "directory traversal attack"
     non-reused password
-retrim audio elements--most of these loops should be WAY shorter.
+
+
+Later:
+add mp3s for safari
+misc. accessibility?
+    aria roles - label button-start-pause as switch functionality.
+option to clear indexedDB all at once
+tests
+    all state transitions:
+        wait_for_entry -> running
+        running -> wait_for_entry
+        running -> paused
+        running -> ringing
+        etc.
+    add a sound
+    remove a sound
+    automated unit testing
 Test cross platform
     looks bad on older firefox I guess?
     apple?
     android!!!
     chromium, chrome
     do browsers honor preload requirements?
-remove redundant currentSound.paused check from updateDisplay()
-if currentSound.play failse in updateDisplay, cycle through combo-sounds.options by combo-sounds.selectedIndex = i + 1 % o.lenght
-rename "wait-for-entry" something descriptive
-warn user on making a url for state=ringing that autoplay may be forbidden
-update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
-convert to typescript ffs
-
-
-Later:
-change all ' to "
-clean up logging
-descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
-My database transactions involve a lot of nesting. Can I make them into "thenable" chains? Promises and async await stuff? Research.
-integrate indexedDB sound loading with the "loadSounds()" function? (Inconvenient right now. Maybe when I learn async/thenable)
-Make error messages nice (not just alerts)
-Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
-handle when quota is exceeded
-option to clear indexedDB all at once
-add mp3s for safari
 
 Maybe:
-misc. accessibility?
-    aria roles - label button-start-pause as switch functionality.
-    firefox accessibility helper
+convert to typescript
 Persist discarded default sounds.
     Add button to reset discarded default sounds
 preserve order across page loads
