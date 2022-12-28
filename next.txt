@@ -1,5 +1,35 @@
 
 Next:
+tests
+unit tests. Who needs jest? Just bake it in and note to remove it.
+    Usually, things being not defined. Load a file, save a file, discard a file.
+    Introduce a failing promise to the database loader; make sure that URLParams loads no matter what.
+    Add sound that fails to load to make sure launchPlay does not race condition with the other thing.
+        That is, after init(), if (DEBUG) {set resetTime (0, 0, 0); launchPlay(), expect second song to play not third song or whatever; reset}. Kind of.
+    Play a sound, pause it, then wait a tick and make sure it doesn't get restarted.
+        Ignore?
+    onButtonURL should not make timeLeft=0
+        ignore?
+    add a sound file
+    save the sound file
+    reload the page?
+    expect it present
+    expect it has same value
+    discard the file
+    reload the page
+    expect it absent
+    set currentSound undefined? no function should error
+    discard default sound
+    should be gone from list but not sounds()
+    change sound while sound is playing; expect new sound to be playing and old sound to be off and no other sounds to be playing.
+
+    ALL comboSounds.options should load
+    All comboSounds.options should have defined sounds.x member
+    "time should go here" should disappear fast.
+    selection should be constant during tick down
+
+    something about state? cycle through all possible states; expect certain displays and certain transitions.
+    
 retrim audio elements--most of these loops should be WAY shorter.
 firefox accessibility helper
 Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
