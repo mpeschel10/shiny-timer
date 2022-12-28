@@ -1,5 +1,7 @@
 "use strict";
 
+const SHINY_TIMER_DEBUG = true;
+
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
 
@@ -52,6 +54,22 @@
         "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
     }
     var defaultSounds = {"silent":true};
+
+    async function testSilent() {
+        console.assert(sounds["silent"].paused, "Expected 'silent' to be initially paused.");
+        try {
+            await sounds["silent"].play();
+        } catch (e) {
+            console.error("Unit test play 'silent' failed:", e);
+        }
+        console.assert(!sounds["silent"].paused, "Expected 'silent' to not be paused after playing it.");
+        try {
+            await sounds["silent"].pause();
+        } catch(e) {
+            console.error("Unit test pause 'silent' failed:", e);
+        }
+        console.assert(sounds["silent"].paused, "Expected 'silent' to be paused after pausing it.");
+    }
 
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
@@ -138,7 +156,11 @@
         }
     }
 
-    function init() {
+    async function init() {
+        if (SHINY_TIMER_DEBUG) {
+            await testSilent();
+        }
+
         comboSounds = document.getElementById('combo-sounds');
         loadDefaultSounds();
         databasePromise = fetchDatabase();
