@@ -1,6 +1,7 @@
 "use strict";
 
 const SHINY_TIMER_DEBUG = true;
+const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
 
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
@@ -55,22 +56,6 @@ const SHINY_TIMER_DEBUG = true;
     }
     var defaultSounds = {"silent":true};
 
-    async function testSilent() {
-        console.assert(sounds["silent"].paused, "Expected 'silent' to be initially paused.");
-        try {
-            await sounds["silent"].play();
-        } catch (e) {
-            console.error("Unit test play 'silent' failed:", e);
-        }
-        console.assert(!sounds["silent"].paused, "Expected 'silent' to not be paused after playing it.");
-        try {
-            await sounds["silent"].pause();
-        } catch(e) {
-            console.error("Unit test pause 'silent' failed:", e);
-        }
-        console.assert(sounds["silent"].paused, "Expected 'silent' to be paused after pausing it.");
-    }
-
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
 
@@ -113,22 +98,30 @@ const SHINY_TIMER_DEBUG = true;
     function loadIDBSoundsFromKeys(database, keys) {
         let transaction = database.transaction([DB_STORE_NAME], "readonly");
         let store = transaction.objectStore(DB_STORE_NAME);
+        if (SHINY_TIMER_DEBUG) {
+            keys.push(SHINY_TIMER_DEBUG_FAKE_KEY);
+            console.debug("Test note:     reject fake key: using keys:", keys);
+        }
         return Promise.allSettled(keys.map(key => 
             new Promise(function(resolve, reject) {
                 let request = store.get(key);
-                request.onsuccess = function(e) {
+                request.onsuccess = function(event) {
                     try {
                         let result = e.currentTarget.result;
                         addNamedSound(result.id, result.file);
                         resolve(result.id);
-                    } catch (e) {
-                        console.error("Failed to load sound " + key);
-                        console.error(e);
-                        reject(e);
+                    } catch (error) {
+                        if (SHINY_TIMER_DEBUG && (key === SHINY_TIMER_DEBUG_FAKE_KEY)) {
+                            console.debug("Test complete: reject fake key.");
+                        } else {
+                            console.error("Succesful transaction, but failed to load sound", key);
+                            console.error(error);
+                        }
+                        reject(error);
                     }
                 };
                 request.onerror = function(e) {
-                    console.error("Failed to load sound " + key);
+                    console.error("Transaction failure while loading sound from", key);
                     console.error(e);
                     reject(e);
                 };
@@ -158,6 +151,7 @@ const SHINY_TIMER_DEBUG = true;
 
     async function init() {
         if (SHINY_TIMER_DEBUG) {
+            testApplyParamsDespiteErrors();
             await testSilent();
         }
 
@@ -218,6 +212,32 @@ const SHINY_TIMER_DEBUG = true;
         intervalID = setInterval(update, 500);
     }
 
+    async function testSilent() {
+        console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be initially paused.");
+        try {
+            await sounds["silent"].play();
+        } catch (e) {
+            console.error("Test failure:  play 'silent' failed:", e);
+        }
+        console.assert(!sounds["silent"].paused, "Test failure:  expected 'silent' to not be paused after playing it.");
+        try {
+            await sounds["silent"].pause();
+        } catch(e) {
+            console.error("Test failure:  pause 'silent' failed:", e);
+        }
+        console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be paused after pausing it.");
+        console.debug("Test complete: silent sound sanity.");
+    }
+
+    async function testApplyParamsDespiteErrors() {
+        await new Promise(r => setTimeout(r, 1000));
+        if (window.shiny_timer_debug_parameters_applied) {
+            console.debug("Test complete: apply parameters despite errors.");
+        } else {
+            console.error("Test failure:  apply parameters despite errors failed: Why have the url params not been applied yet?");
+        }
+    }
+
     function getOptionsIndex(selectedPath) {
         for (let i = 0; i < comboSounds.options.length; i++) {
             let option = comboSounds.options[i];
@@ -229,6 +249,9 @@ const SHINY_TIMER_DEBUG = true;
     }
 
     function applyParameters(parameters) {
+        if (SHINY_TIMER_DEBUG) {
+            window.shiny_timer_debug_parameters_applied = true;
+        }
         // Problem: half the state is stored in the fieldHours etc and comboSounds,
         //  and there's no dry way to change the state AND update the UI without firing events.
         // Unfortunately, this function will have to be completely revised any time you change
