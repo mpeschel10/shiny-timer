@@ -1,7 +1,8 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = true;
+const SHINY_TIMER_DEBUG = false;
 const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
+const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n\nUsed for testing.";
 
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
@@ -66,10 +67,14 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
          and then the user can fire the alarm, change currentSound, and reset() will be unable
          to turn the sound off.*/
     function hideSound(path) {
-        console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
+        if (!(SHINY_TIMER_DEBUG && path === SHINY_TIMER_DEBUG_BAD_AUDIO))
+            console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
         for (let i = 0; i < comboSounds.length; i++) {
             if (comboSounds.options[i].value === path) {
-                console.log("Deleting comboSound[" + i + "]: " + comboSounds.options[i].value);
+                if (!(SHINY_TIMER_DEBUG && path === SHINY_TIMER_DEBUG_BAD_AUDIO))
+                    console.log("Deleting comboSound[" + i + "]: " + comboSounds.options[i].value);
+                else
+                    console.debug("Test note:     bad audio: hiding bad audio option");
                 comboSounds.remove(i)
                 if (!launchPlayLock && i <= comboSounds.selectedIndex && comboSounds.selectedIndex > 0) {
                     comboSounds.selectedIndex -= 1;
@@ -151,6 +156,7 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
 
     async function init() {
         if (SHINY_TIMER_DEBUG) {
+            testBadAudio();
             testApplyParamsDespiteErrors();
             await testSilent();
         }
@@ -201,6 +207,15 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
         onFileSoundAddChange();
         updateCurrentSound(); 
 
+        if (SHINY_TIMER_DEBUG) {
+            comboSounds.selectedIndex = 0;
+            updateCurrentSound();
+            await launchPlay();
+            console.assert(!currentSound.paused, "Test bad sound: Expected launchPlay to result in currentSound playing; it is not.");
+            console.assert(currentSound.src.endsWith("brrrring-loop.ogg"), "Test bad sound: Expected launchPlay to result in brrring-loop.ogg to be selected; instead, got " + currentSound.src + ".");
+            buttonReset.click();
+            console.debug("Test bad sound complete.");
+        }
         // Note applyParameters is performed after all our elements varaiables (buttonReset etc)
         //  have been acquired.
         loadingSoundsPromise.then(loadedSounds =>
@@ -210,6 +225,17 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
         // Update clock and show parameters immediately on page load
         update(); 
         intervalID = setInterval(update, 500);
+
+    }
+
+    function testBadAudio() {
+        let _comboSounds = document.getElementById("combo-sounds");
+        let newOption = document.createElement("option");
+        newOption.value = SHINY_TIMER_DEBUG_BAD_AUDIO
+        newOption.appendChild(document.createTextNode(SHINY_TIMER_DEBUG_BAD_AUDIO));
+        _comboSounds.prepend(newOption);
+        // Note that, because loadDefaultSounds is called after this, our bad child
+        //  will acquire an associated Audio element, which will be eventually discarded.
     }
 
     async function testSilent() {
@@ -359,7 +385,10 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
                     await currentSound.play();
                     return;
                 } catch (e) {
-                    console.error("Could not play sound:", e);
+                    if (SHINY_TIMER_DEBUG && currentSound.src !== SHINY_TIMER_DEBUG_BAD_AUDIO) {
+                    } else {
+                        console.error("Could not play sound:", e);
+                    }
                 }
             }
 
@@ -373,12 +402,16 @@ const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for 
                         await currentSound.play();
                         let name = name_candidate[0];
                         let i = getOptionsIndex(name);
-                        console.log("Selecting sound " + name + " at index " + i);
+                        console.log("launchPlay: Selecting sound " + name + " at index " + i);
                         comboSounds.selectedIndex = i;
                         return;
                     } catch (e) {
-                        candidate.pause();
-                        console.error("Could not play sound:", e);
+                        if (SHINY_TIMER_DEBUG && currentSound.src !== SHINY_TIMER_DEBUG_BAD_AUDIO) {
+                            console.log("Test note:     bad audio: reject bad audio source.");
+                        } else {
+                            candidate.pause();
+                            console.error("Could not play sound:", e);
+                        }
                     }
                 }
             }
