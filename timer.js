@@ -1,8 +1,19 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = false;
+const SHINY_TIMER_DEBUG = true;
 const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
 const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n\nUsed for testing.";
+const SHINY_TIMER_DEBUG_SOUND_ADD = "test_silent_sound_name";
+
+const SILENT_WAV = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
+
+if (SHINY_TIMER_DEBUG) {
+    window.shiny_timer_debug_reload_count = localStorage.getItem("reloadCount");
+    if (shiny_timer_debug_reload_count === null) {
+        shiny_timer_debug_reload_count = 0;
+    }
+    shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
+}
 
 (() => {
     const reDigits = /[\d\.]/; // Hint to the user this is numbers only
@@ -53,7 +64,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
      but also more error-prone to code,
      and also would require machinery for tracking if a sound should continue to play or not while we change selections.*/
     var sounds = {
-        "silent": new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==")
+        "silent": new Audio(SILENT_WAV)
     }
     var defaultSounds = {"silent":true};
 
@@ -103,7 +114,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
     function loadIDBSoundsFromKeys(database, keys) {
         let transaction = database.transaction([DB_STORE_NAME], "readonly");
         let store = transaction.objectStore(DB_STORE_NAME);
-        if (SHINY_TIMER_DEBUG) {
+        if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             keys.push(SHINY_TIMER_DEBUG_FAKE_KEY);
             console.debug("Test note:     reject fake key: using keys:", keys);
         }
@@ -112,7 +123,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
                 let request = store.get(key);
                 request.onsuccess = function(event) {
                     try {
-                        let result = e.currentTarget.result;
+                        let result = event.currentTarget.result;
                         addNamedSound(result.id, result.file);
                         resolve(result.id);
                     } catch (error) {
@@ -125,6 +136,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
                         reject(error);
                     }
                 };
+
                 request.onerror = function(e) {
                     console.error("Transaction failure while loading sound from", key);
                     console.error(e);
@@ -155,7 +167,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
     }
 
     async function init() {
-        if (SHINY_TIMER_DEBUG) {
+        if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             testBadAudio();
             testApplyParamsDespiteErrors();
             await testSilent();
@@ -207,7 +219,7 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
         onFileSoundAddChange();
         updateCurrentSound(); 
 
-        if (SHINY_TIMER_DEBUG) {
+        if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count == 2) {
             comboSounds.selectedIndex = 0;
             updateCurrentSound();
             await launchPlay();
@@ -226,6 +238,88 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
         update(); 
         intervalID = setInterval(update, 500);
 
+
+        if (SHINY_TIMER_DEBUG) {
+            console.debug("Test note:     add sound: begin add sound.");
+            await new Promise(resolve => setTimeout(resolve, 300));
+            if (shiny_timer_debug_reload_count === 0) {
+                console.debug("Test note:     add sound: First reload; create file and add.");
+                localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
+                // Borrowed from https://stackoverflow.com/a/38935990/6286797
+                let arr = SILENT_WAV.split(','),
+                    mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]),
+                    n = bstr.length,
+                    u8arr = new Uint8Array(n);
+                while (n--){
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+
+                // I can't figure out how to spoof a FileList for a test,
+                //  so just replace the whole element lol.
+                fileSoundAdd = {files:[new File([u8arr], SHINY_TIMER_DEBUG_SOUND_ADD, {type:mime})]};
+                onFileSoundAddChange();
+                await onButtonSoundAdd();
+                let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+                try {
+                    await sound.play();
+                } catch (e) {
+                    console.error("Test failure:  sound add: could not play" +
+                        ' "silent" sound after adding it: ' + e
+                    );
+                }
+                console.assert(!(sound.paused),
+                    'Test failure:  sound add: "silent" sound did not play' +
+                    " like it was supposed to."
+                );
+                console.log("Sound:", sound);
+                await sound.pause();
+                console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
+                    "Test failure:  sound add: key string for test sound did not get added" +
+                    " to comboSounds: " + comboSounds.options[0].value);
+
+                console.warn("Please reload page for sound add test to continue.");
+                //window.location.reload();
+
+            } else if (shiny_timer_debug_reload_count === 1) {
+                console.debug("Test note:     add sound: Second reload; play file and discard.");
+                localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
+                // Expect persistent storage to have test_silent_sound_name as a playable thing
+                let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+                try {
+                    await sound.play();
+                } catch (e) {
+                    console.error('Test failure:  sound add: could not play "silent" sound' +
+                        " after page reload: " + e
+                    );
+                }
+                console.assert(!(sound.paused),
+                    'Test failure:  sound add: "silent" sound did not play.'
+                );
+                console.log("Sound:", sound);
+                await sound.pause();
+                console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
+                    "Test failure:  sound add: key string for test sound did not persist" +
+                    " over reload: " + comboSounds.options[0].value
+                );
+
+                comboSounds.selectedIndex = 0;
+                updateCurrentSound();
+                await buttonSoundRemove.click();
+                console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
+                    'Test failure:  sound add: apparently could not remove "silent" sound.'
+                );
+
+                console.warn("Please reload page for sound add test to continue.");
+                //window.location.reload();
+
+            } else if (shiny_timer_debug_reload_count >= 2) {
+                console.debug("Test complete: sound add.");
+                localStorage.setItem("reloadCount", 0);
+            }
+
+            fileSoundAdd = document.getElementById("file-sound-add");
+        }
     }
 
     function testBadAudio() {
@@ -703,7 +797,8 @@ const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n
         }
 
         fileSoundAdd.value = "";
-        fileSoundAdd.dispatchEvent(new Event("change"));
+        if (!(SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 0))
+            fileSoundAdd.dispatchEvent(new Event("change"));
     }
 
     function onButtonSoundRemove(e) {
