@@ -1,6 +1,6 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = true;
+const SHINY_TIMER_DEBUG = false;
 const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
 const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n\nUsed for testing.";
 const SHINY_TIMER_DEBUG_SOUND_ADD = "test_silent_sound_name";
@@ -13,6 +13,7 @@ if (SHINY_TIMER_DEBUG) {
         shiny_timer_debug_reload_count = 0;
     }
     shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
+    shiny_timer_debug_reload_count = 2;
 }
 
 (() => {
@@ -221,7 +222,10 @@ if (SHINY_TIMER_DEBUG) {
 
         if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count == 2) {
             comboSounds.selectedIndex = 0;
-            updateCurrentSound();
+            comboSounds.dispatchEvent(new Event("change"));
+            // Wait two cycles for updateCurrentSound to be called.
+            await new Promise(r => setTimeout(r, 1));
+            await new Promise(r => setTimeout(r, 1));
             await launchPlay();
             console.assert(!currentSound.paused, "Test bad sound: Expected launchPlay to result in currentSound playing; it is not.");
             console.assert(currentSound.src.endsWith("brrrring-loop.ogg"), "Test bad sound: Expected launchPlay to result in brrring-loop.ogg to be selected; instead, got " + currentSound.src + ".");
@@ -240,89 +244,133 @@ if (SHINY_TIMER_DEBUG) {
 
 
         if (SHINY_TIMER_DEBUG) {
-            console.debug("Test note:     add sound: begin add sound.");
-            await new Promise(resolve => setTimeout(resolve, 300));
-            if (shiny_timer_debug_reload_count === 0) {
-                console.debug("Test note:     add sound: First reload; create file and add.");
-                localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
-                // Borrowed from https://stackoverflow.com/a/38935990/6286797
-                let arr = SILENT_WAV.split(','),
-                    mime = arr[0].match(/:(.*?);/)[1],
-                    bstr = atob(arr[1]),
-                    n = bstr.length,
-                    u8arr = new Uint8Array(n);
-                while (n--){
-                    u8arr[n] = bstr.charCodeAt(n);
-                }
+            await testSoundAdd();
+        }
+        if (SHINY_TIMER_DEBUG && shiny_timer_debug_reload_count === 2) {
+            await testPlaySwitch();
+        }
+    }
 
-                // I can't figure out how to spoof a FileList for a test,
-                //  so just replace the whole element lol.
-                fileSoundAdd = {files:[new File([u8arr], SHINY_TIMER_DEBUG_SOUND_ADD, {type:mime})]};
-                onFileSoundAddChange();
-                await onButtonSoundAdd();
-                let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
-                try {
-                    await sound.play();
-                } catch (e) {
-                    console.error("Test failure:  sound add: could not play" +
-                        ' "silent" sound after adding it: ' + e
-                    );
-                }
-                console.assert(!(sound.paused),
-                    'Test failure:  sound add: "silent" sound did not play' +
-                    " like it was supposed to."
-                );
-                console.log("Sound:", sound);
-                await sound.pause();
-                console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
-                    "Test failure:  sound add: key string for test sound did not get added" +
-                    " to comboSounds: " + comboSounds.options[0].value);
+    async function testPlaySwitch() {
+        console.debug("Test note:     play switch: begin.");
+        const playingSounds = () => Object.values(sounds).filter(sound => !sound.paused);
+        console.assert(playingSounds().length === 0,
+            "Test failure:  play switch: expected no sounds playing at start of test."
+        );
+        await launchPlay();
+        console.assert(playingSounds().length === 1,
+            "Test failure:  play switch: expected exactly one sound to play after launchPlay()."
+        );
+        console.assert(!currentSound.paused,
+            "Test failure:  play switch: expected current sound to play after launchPlay()."
+        );
+        comboSounds.selectedIndex = 12;
+        comboSounds.dispatchEvent(new Event("change"));
+        // Wait two cycles for updateCurrentSound to be called.
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        let expectedSound = sounds[comboSounds.value];
+        console.assert(playingSounds().length === 1,
+            "Test failure:  play switch: expected exactly one sound to play after change sound."
+        );
+        console.assert(!currentSound.paused,
+            "Test failure:  play switch: expected current sound to pause after change sound."
+        );
+        console.assert(!expectedSound.paused,
+            "Test failure:  play switch: expected a different sound to play after change sound."
+        );
+        await currentSound.pause();
+        comboSounds.selectedIndex = 0;
+        comboSounds.dispatchEvent(new Event("change"));
+        console.debug("Test complete: play switch.");
+    }
 
-                console.warn("Please reload page for sound add test to continue.");
-                //window.location.reload();
-
-            } else if (shiny_timer_debug_reload_count === 1) {
-                console.debug("Test note:     add sound: Second reload; play file and discard.");
-                localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
-                // Expect persistent storage to have test_silent_sound_name as a playable thing
-                let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
-                try {
-                    await sound.play();
-                } catch (e) {
-                    console.error('Test failure:  sound add: could not play "silent" sound' +
-                        " after page reload: " + e
-                    );
-                }
-                console.assert(!(sound.paused),
-                    'Test failure:  sound add: "silent" sound did not play.'
-                );
-                console.log("Sound:", sound);
-                await sound.pause();
-                console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
-                    "Test failure:  sound add: key string for test sound did not persist" +
-                    " over reload: " + comboSounds.options[0].value
-                );
-
-                comboSounds.selectedIndex = 0;
-                updateCurrentSound();
-                await buttonSoundRemove.click();
-                console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
-                    'Test failure:  sound add: apparently could not remove "silent" sound.'
-                );
-
-                console.warn("Please reload page for sound add test to continue.");
-                //window.location.reload();
-
-            } else if (shiny_timer_debug_reload_count >= 2) {
-                console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
-                    'Test failure:  sound add: could not persistently remove "silent" sound.'
-                );
-                console.debug("Test complete: sound add.");
-                localStorage.setItem("reloadCount", 0);
+    async function testSoundAdd() {
+        console.debug("Test note:     add sound: begin add sound.");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        if (shiny_timer_debug_reload_count === 0) {
+            console.debug("Test note:     add sound: First reload; create file and add.");
+            localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
+            // Borrowed from https://stackoverflow.com/a/38935990/6286797
+            let arr = SILENT_WAV.split(','),
+                mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]),
+                n = bstr.length,
+                u8arr = new Uint8Array(n);
+            while (n--){
+                u8arr[n] = bstr.charCodeAt(n);
             }
 
-            fileSoundAdd = document.getElementById("file-sound-add");
+            // I can't figure out how to spoof a FileList for a test,
+            //  so just replace the whole element lol.
+            fileSoundAdd = {files:[new File([u8arr], SHINY_TIMER_DEBUG_SOUND_ADD, {type:mime})]};
+            onFileSoundAddChange();
+            await onButtonSoundAdd();
+            let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+            try {
+                await sound.play();
+            } catch (e) {
+                console.error("Test failure:  sound add: could not play" +
+                    ' "silent" sound after adding it: ' + e
+                );
+            }
+            console.assert(!(sound.paused),
+                'Test failure:  sound add: "silent" sound did not play' +
+                " like it was supposed to."
+            );
+            console.log("Sound:", sound);
+            await sound.pause();
+            console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
+                "Test failure:  sound add: key string for test sound did not get added" +
+                " to comboSounds: " + comboSounds.options[0].value);
+
+            console.warn("Please reload page for sound add test to continue.");
+            //window.location.reload();
+
+        } else if (shiny_timer_debug_reload_count === 1) {
+            console.debug("Test note:     add sound: Second reload; play file and discard.");
+            localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
+            // Expect persistent storage to have test_silent_sound_name as a playable thing
+            let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+            try {
+                await sound.play();
+            } catch (e) {
+                console.error('Test failure:  sound add: could not play "silent" sound' +
+                    " after page reload: " + e
+                );
+            }
+            console.assert(!(sound.paused),
+                'Test failure:  sound add: "silent" sound did not play.'
+            );
+            console.log("Sound:", sound);
+            await sound.pause();
+            console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
+                "Test failure:  sound add: key string for test sound did not persist" +
+                " over reload: " + comboSounds.options[0].value
+            );
+
+            comboSounds.selectedIndex = 0;
+            comboSounds.dispatchEvent(new Event("change"));
+            // Wait two cycles for updateCurrentSound to be called.
+            await new Promise(r => setTimeout(r, 1));
+            await new Promise(r => setTimeout(r, 1));
+            await buttonSoundRemove.click();
+            console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
+                'Test failure:  sound add: apparently could not remove "silent" sound.'
+            );
+
+            console.warn("Please reload page for sound add test to continue.");
+            //window.location.reload();
+
+        } else if (shiny_timer_debug_reload_count >= 2) {
+            console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
+                'Test failure:  sound add: could not persistently remove "silent" sound.'
+            );
+            console.debug("Test complete: sound add.");
+            localStorage.setItem("reloadCount", 0);
         }
+
+        fileSoundAdd = document.getElementById("file-sound-add");
     }
 
     function testBadAudio() {
