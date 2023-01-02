@@ -314,6 +314,9 @@ if (SHINY_TIMER_DEBUG) {
                 //window.location.reload();
 
             } else if (shiny_timer_debug_reload_count >= 2) {
+                console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
+                    'Test failure:  sound add: could not persistently remove "silent" sound.'
+                );
                 console.debug("Test complete: sound add.");
                 localStorage.setItem("reloadCount", 0);
             }
