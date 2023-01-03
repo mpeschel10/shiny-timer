@@ -13,6 +13,8 @@ if (SHINY_TIMER_DEBUG) {
         shiny_timer_debug_reload_count = 0;
     }
     shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
+    // TODO this skips the normal reload persistence testing.
+    // delete = 2 for full test.
     shiny_timer_debug_reload_count = 2;
 }
 
@@ -247,11 +249,35 @@ if (SHINY_TIMER_DEBUG) {
             await testSoundAdd();
         }
         if (SHINY_TIMER_DEBUG && shiny_timer_debug_reload_count === 2) {
-            await testPlaySwitch();
+            await testSoundSwitch();
+            await testSoundsAllLoad();
         }
     }
 
-    async function testPlaySwitch() {
+    async function testSoundsAllLoad() {
+        let keysToCheck = Array.from(comboSounds.options).map(o => o.value);
+        console.assert(
+            keysToCheck.every(k => sounds[k] !== undefined),
+            "Test failure:  sounds all load: some combo options are not associated with audios."
+        );
+
+        for (let key of keysToCheck) {
+            if (sounds[key] === undefined)
+                continue;
+            let audio = sounds[key];
+            try {
+                await audio.play();
+                await audio.pause();
+            } catch(e) {
+                console.error("Test failure:  sounds all load: could not play sound with key",
+                    key, "due to error", e
+                );
+            }
+        }
+        console.debug("Test complete: sounds all load.");
+    }
+
+    async function testSoundSwitch() {
         console.debug("Test note:     play switch: begin.");
         const playingSounds = () => Object.values(sounds).filter(sound => !sound.paused);
         console.assert(playingSounds().length === 0,
@@ -613,7 +639,10 @@ if (SHINY_TIMER_DEBUG) {
         currentSound = sounds[comboSounds.value];
         if (shouldPlay && currentSound) {
             currentSound.currentTime = 0;
-            currentSound.play();
+            // suppress nuisance "error" if the user switches sounds very fast.
+            // "Uncaught (in promise) DOMException: The fetching process for the media resource
+            //  was aborted by the user agent at the user's request.
+            currentSound.play().catch(() => {});
         }
     }
 
