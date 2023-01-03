@@ -131,7 +131,7 @@ if (SHINY_TIMER_DEBUG) {
                         resolve(result.id);
                     } catch (error) {
                         if (SHINY_TIMER_DEBUG && (key === SHINY_TIMER_DEBUG_FAKE_KEY)) {
-                            console.debug("Test complete: reject fake key.");
+                            console.log("Test complete: reject fake key.");
                         } else {
                             console.error("Succesful transaction, but failed to load sound", key);
                             console.error(error);
@@ -274,7 +274,7 @@ if (SHINY_TIMER_DEBUG) {
                 );
             }
         }
-        console.debug("Test complete: sounds all load.");
+        console.log("Test complete: sounds all load.");
     }
 
     async function testSoundSwitch() {
@@ -308,7 +308,7 @@ if (SHINY_TIMER_DEBUG) {
         await currentSound.pause();
         comboSounds.selectedIndex = 0;
         comboSounds.dispatchEvent(new Event("change"));
-        console.debug("Test complete: play switch.");
+        console.log("Test complete: play switch.");
     }
 
     async function testSoundAdd() {
@@ -392,7 +392,7 @@ if (SHINY_TIMER_DEBUG) {
             console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
                 'Test failure:  sound add: could not persistently remove "silent" sound.'
             );
-            console.debug("Test complete: sound add.");
+            console.log("Test complete: sound add.");
             localStorage.setItem("reloadCount", 0);
         }
 
@@ -423,13 +423,13 @@ if (SHINY_TIMER_DEBUG) {
             console.error("Test failure:  pause 'silent' failed:", e);
         }
         console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be paused after pausing it.");
-        console.debug("Test complete: silent sound sanity.");
+        console.log("Test complete: silent sound sanity.");
     }
 
     async function testApplyParamsDespiteErrors() {
         await new Promise(r => setTimeout(r, 1000));
         if (window.shiny_timer_debug_parameters_applied) {
-            console.debug("Test complete: apply parameters despite errors.");
+            console.log("Test complete: apply parameters despite errors.");
         } else {
             console.error("Test failure:  apply parameters despite errors failed: Why have the url params not been applied yet?");
         }
