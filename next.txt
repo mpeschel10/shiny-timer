@@ -2,8 +2,8 @@
 Next:
 tests
 unit tests. Who needs jest? Just bake it in and note to remove it.
-    selection should be constant during tick down
     something about state? cycle through all possible states; expect certain displays and certain transitions.
+    DEBUG_FLAG should be in localStorage so I can test in production.
     
 Manual tests:
     Start new window with no database. Expect "Upgrade needed", "Creating store"

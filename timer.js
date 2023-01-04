@@ -15,7 +15,7 @@ if (SHINY_TIMER_DEBUG) {
     shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
     // TODO this skips the normal reload persistence testing.
     // delete = 2 for full test.
-    shiny_timer_debug_reload_count = 2;
+     shiny_timer_debug_reload_count = 2;
 }
 
 (() => {
@@ -251,7 +251,56 @@ if (SHINY_TIMER_DEBUG) {
         if (SHINY_TIMER_DEBUG && shiny_timer_debug_reload_count === 2) {
             await testSoundSwitch();
             await testSoundsAllLoad();
+            await testKeepSelection();
         }
+    }
+
+    async function testKeepSelection() {
+        timer.resetTime = ["59", "59", "59"];
+        buttonReset.click();
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 200));
+
+        fieldHours.setSelectionRange(0, 1);
+        fieldHours.focus();
+        await new Promise(r => setTimeout(r, 1500));
+
+        console.assert(fieldHours.selectionStart === 0, "Test failure:  keep selection: fieldHours" +
+            " selection start should be 0; is " + fieldHours.selectionStart
+        );
+        console.assert(fieldHours.selectionEnd === 1, "Test failure:  keep selection: fieldHours" +
+            " selection end should be 1; is " + fieldHours.selectionEnd
+        );
+        console.assert(fieldMinutes.selectionStart === fieldMinutes.selectionEnd, "Test failure: " +
+            " keep selection: fieldMinutes selectionStart should === selectionEnd, but start is " +
+            fieldMinutes.selectionStart + " and end is " + fieldMinutes.selectionEnd
+        );
+        console.assert(fieldSeconds.selectionStart === fieldSeconds.selectionEnd, "Test failure: " +
+            " keep selection: fieldSeconds selectionStart should === selectionEnd, but start is " +
+            fieldSeconds.selectionStart + " and end is " + fieldSeconds.selectionEnd
+        );
+
+        fieldHours.setSelectionRange(2, 2);
+        fieldSeconds.setSelectionRange(0, 2);
+        fieldSeconds.focus();
+        await new Promise(r => setTimeout(r, 1500));
+        console.assert(fieldHours.selectionStart === fieldHours.selectionEnd, "Test failure: " +
+            " keep selection: fieldHours selectionStart should === selectionEnd, but start is " +
+            fieldHours.selectionStart + " and end is " + fieldHours.selectionEnd
+        );
+        console.assert(fieldMinutes.selectionStart === fieldMinutes.selectionEnd, "Test failure: " +
+            " keep selection: fieldMinutes selectionStart should === selectionEnd, but start is " +
+            fieldMinutes.selectionStart + " and end is " + fieldMinutes.selectionEnd
+        );
+        console.assert(fieldSeconds.selectionStart === 0, "Test failure:  keep selection:" +
+            " fieldSeconds selection start should be 0; is " + fieldSeconds.selectionStart
+        );
+        console.assert(fieldSeconds.selectionEnd === 2, "Test failure:  keep selection:" +
+            " fieldSeconds selection end should be 1; is " + fieldSeconds.selectionEnd
+        );
+        
+
+        console.log("Test complete: keep selection.");
     }
 
     async function testSoundsAllLoad() {
