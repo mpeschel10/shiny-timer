@@ -1,6 +1,6 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = false;
+const SHINY_TIMER_DEBUG = true;
 const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
 const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n\nUsed for testing.";
 const SHINY_TIMER_DEBUG_SOUND_ADD = "test_silent_sound_name";
@@ -15,7 +15,7 @@ if (SHINY_TIMER_DEBUG) {
     shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
     // TODO this skips the normal reload persistence testing.
     // delete = 2 for full test.
-     shiny_timer_debug_reload_count = 2;
+     // shiny_timer_debug_reload_count = 2;
 }
 
 (() => {
@@ -172,7 +172,7 @@ if (SHINY_TIMER_DEBUG) {
     async function init() {
         if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             testBadAudio();
-            testApplyParamsDespiteErrors();
+            window.shiny_timer_debug_parameters_promise = testApplyParamsDespiteErrors();
             await testSilent();
         }
 
@@ -244,15 +244,158 @@ if (SHINY_TIMER_DEBUG) {
         update(); 
         intervalID = setInterval(update, 500);
 
-
         if (SHINY_TIMER_DEBUG) {
             await testSoundAdd();
         }
         if (SHINY_TIMER_DEBUG && shiny_timer_debug_reload_count === 2) {
+            await shiny_timer_debug_parameters_promise;
             await testSoundSwitch();
             await testSoundsAllLoad();
             await testKeepSelection();
+            await testState();
         }
+    }
+
+    async function testState() {
+        //                 δ |startpause | reset | fieldChange | updateTimer0 |
+        //                   __________________________________________________
+        // W: Wait_for_entry |    R      |  W    |      W      |              |
+        // R: Running        |    P      |  W    |      W      |       I      |
+        // P: Pause          |    R      |  W    |      W      |              |
+        // I: rInging        |    G      |  W    |      W      |              |
+        // G: runG           |    G      |  W    |      W      |              |
+        // Don't bother testing every fieldChange permutation; as long as it calls
+        //  buttonReset we should be fine
+
+        const playingCount = () => Object.values(sounds).filter(a => !a.paused).length;
+        
+        console.debug("Test note:     state: check ---> W");
+        let sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected initial state W."
+        );
+
+        console.debug("Test note:     state: check W --reset-> W");
+        sampleTime = timer.timeLeft;
+        buttonReset.click();
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected W --reset-> W."
+        );
+
+        console.debug("Test note:     state: check W --start-> R");
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "running" && buttonStartPause.value === "Pause" &&
+            timer.timeLeft < sampleTime && playingCount() === 0,
+            "Test failure:  state: expected W --start-> R."
+        );
+
+        console.debug("Test note:     state: check R --reset-> W");
+        buttonReset.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected R --reset-> W."
+        );
+
+        console.debug("Test note:     state: check R --start-> P");
+        buttonStartPause.click();
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "paused" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected R --start-> P."
+        );
+
+        console.debug("Test note:     state: check P --reset-> W");
+        buttonReset.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected P --reset-> W."
+        );
+
+        console.debug("Test note:     state: check P --start-> R");
+        buttonStartPause.click();
+        buttonStartPause.click();
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "running" && buttonStartPause.value === "Pause" &&
+            timer.timeLeft < sampleTime && playingCount() === 0,
+            "Test failure:  state: expected P --start-> R."
+        );
+
+        console.debug("Test note:     state: check R --update-> I");
+        timer.endTime = Date.now();
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "ringing" && buttonStartPause.value === "Ok" &&
+            timer.timeLeft === 0 && playingCount() === 1,
+            "Test failure:  state: expected R --update-> I. state " + timer.state + " value " +
+            buttonStartPause.value + " timeLeft " + timer.timeLeft + " playingCount " + 
+            playingCount()
+        );
+
+        console.debug("Test note:     state: check I --reset-> W");
+        buttonReset.click();
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected I --reset-> W."
+        );
+
+        console.debug("Test note:     state: check I --ok-> G");
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        timer.endTime = Date.now();
+        await new Promise(r => setTimeout(r, 1000));
+        buttonStartPause.click();
+        console.assert(timer.state === "rung" && buttonStartPause.value === "Ok" &&
+            timer.timeLeft === 0 && playingCount() === 0,
+            "Test failure:  state: expected I --ok-> G."
+        );
+
+        console.debug("Test note:     state: check G --ok-> G");
+        buttonStartPause.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        console.assert(timer.state === "rung" && buttonStartPause.value === "Ok" &&
+            timer.timeLeft === 0 && playingCount() === 0,
+            "Test failure:  state: expected G --ok-> G."
+        );
+
+        console.debug("Test note:     state: check G --reset-> W");
+        buttonReset.click();
+        await new Promise(r => setTimeout(r, 1));
+        await new Promise(r => setTimeout(r, 1));
+        sampleTime = timer.timeLeft;
+        await new Promise(r => setTimeout(r, 1000));
+        console.assert(timer.state === "wait_for_entry" && buttonStartPause.value === "Start" &&
+            timer.timeLeft === sampleTime && playingCount() === 0,
+            "Test failure:  state: expected G --reset-> W."
+        );
+
+        console.log("Test complete: state.");
     }
 
     async function testKeepSelection() {
@@ -261,6 +404,7 @@ if (SHINY_TIMER_DEBUG) {
         buttonStartPause.click();
         await new Promise(r => setTimeout(r, 200));
 
+        console.debug("Test note:     keep selection: fieldHours 0-1");
         fieldHours.setSelectionRange(0, 1);
         fieldHours.focus();
         await new Promise(r => setTimeout(r, 1500));
@@ -280,6 +424,7 @@ if (SHINY_TIMER_DEBUG) {
             fieldSeconds.selectionStart + " and end is " + fieldSeconds.selectionEnd
         );
 
+        console.debug("Test note:     keep selection: fieldSeconds 0-2");
         fieldHours.setSelectionRange(2, 2);
         fieldSeconds.setSelectionRange(0, 2);
         fieldSeconds.focus();
@@ -299,7 +444,7 @@ if (SHINY_TIMER_DEBUG) {
             " fieldSeconds selection end should be 1; is " + fieldSeconds.selectionEnd
         );
         
-
+        buttonReset.click();
         console.log("Test complete: keep selection.");
     }
 
@@ -361,10 +506,10 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     async function testSoundAdd() {
-        console.debug("Test note:     add sound: begin add sound.");
+        console.debug("Test note:     sound add: begin add sound.");
         await new Promise(resolve => setTimeout(resolve, 300));
         if (shiny_timer_debug_reload_count === 0) {
-            console.debug("Test note:     add sound: First reload; create file and add.");
+            console.debug("Test note:     sound add: First reload; create file and add.");
             localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
             // Borrowed from https://stackoverflow.com/a/38935990/6286797
             let arr = SILENT_WAV.split(','),
@@ -393,7 +538,7 @@ if (SHINY_TIMER_DEBUG) {
                 'Test failure:  sound add: "silent" sound did not play' +
                 " like it was supposed to."
             );
-            console.log("Sound:", sound);
+            console.debug("Test note:     sound add: Sound:", sound);
             await sound.pause();
             console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
                 "Test failure:  sound add: key string for test sound did not get added" +
@@ -627,7 +772,7 @@ if (SHINY_TIMER_DEBUG) {
                         return;
                     } catch (e) {
                         if (SHINY_TIMER_DEBUG && currentSound.src !== SHINY_TIMER_DEBUG_BAD_AUDIO) {
-                            console.log("Test note:     bad audio: reject bad audio source.");
+                            console.debug("Test note:     bad audio: reject bad audio source.");
                         } else {
                             candidate.pause();
                             console.error("Could not play sound:", e);
@@ -873,7 +1018,7 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     function addNamedSound(name, file) {
-        console.log(name, file);
+        console.debug("addNamedSound: ", name, file);
         let option = document.createElement("option");
         option.appendChild(document.createTextNode(name));
         option.value = name;

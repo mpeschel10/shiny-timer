@@ -1,8 +1,9 @@
 
 Next:
 tests
+for testState() e2e test, consider checking that timeLeft decreases monotonically through button clicks and does not get "reset" at any point.
+
 unit tests. Who needs jest? Just bake it in and note to remove it.
-    something about state? cycle through all possible states; expect certain displays and certain transitions.
     DEBUG_FLAG should be in localStorage so I can test in production.
     
 Manual tests:
@@ -30,6 +31,7 @@ make the page pretty
     ribbon?
     instead of zero-padded two digits display, just one digit?
     Put the sound managment stuff in a dialogue or box or something
+const instead of let
 warn user on making a url for state=ringing that autoplay may be forbidden
 CentOS best practices email
     Forbid .. "directory traversal attack"
