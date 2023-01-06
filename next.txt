@@ -1,8 +1,6 @@
 
 Next:
 tests
-for testState() e2e test, consider checking that timeLeft decreases monotonically through button clicks and does not get "reset" at any point.
-
 unit tests. Who needs jest? Just bake it in and note to remove it.
     DEBUG_FLAG should be in localStorage so I can test in production.
     
@@ -33,6 +31,7 @@ make the page pretty
     Put the sound managment stuff in a dialogue or box or something
 const instead of let
 warn user on making a url for state=ringing that autoplay may be forbidden
+follow style guide at https://www.crockford.com/code.html
 CentOS best practices email
     Forbid .. "directory traversal attack"
     non-reused password
@@ -61,6 +60,7 @@ Test cross platform
     do browsers honor preload requirements?
 
 Maybe:
+for testState() e2e test, consider checking that timeLeft decreases monotonically through button clicks and does not get "reset" at any point.
 convert to typescript
 Persist discarded default sounds.
     Add button to reset discarded default sounds

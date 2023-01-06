@@ -1,9 +1,9 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = true;
-const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not exist.\n\nUsed for testing.";
-const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake source that should not have a sound.\n\nUsed for testing.";
-const SHINY_TIMER_DEBUG_SOUND_ADD = "test_silent_sound_name";
+const SHINY_TIMER_DEBUG = localStorage.getItem("shinyTimerDebug") === "true";
+const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not have an associated File in IndexedDB.\n\nUsed for testing error handling of an inconsistency in the database.";
+const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake comboSounds option value that should not have an associated Audio in sounds.\n\nUsed for testing error handling of audio that doesn't load.";
+const SHINY_TIMER_DEBUG_SOUND_ADD = "fake comboSounds option value that should have an associated File in IndexedDB. Used for testing that Audio can be persistently stored and loaded.";
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
 
@@ -13,9 +13,6 @@ if (SHINY_TIMER_DEBUG) {
         shiny_timer_debug_reload_count = 0;
     }
     shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
-    // TODO this skips the normal reload persistence testing.
-    // delete = 2 for full test.
-     // shiny_timer_debug_reload_count = 2;
 }
 
 (() => {
@@ -559,26 +556,28 @@ if (SHINY_TIMER_DEBUG) {
                     " after page reload: " + e
                 );
             }
-            console.assert(!(sound.paused),
-                'Test failure:  sound add: "silent" sound did not play.'
-            );
-            console.log("Sound:", sound);
-            await sound.pause();
-            console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
-                "Test failure:  sound add: key string for test sound did not persist" +
-                " over reload: " + comboSounds.options[0].value
-            );
+            if (sound !== undefined) {
+                console.assert(!(sound.paused), 'Test failure:  sound add: "silent" sound' +
+                    " did not play."
+                );
+                console.log("Sound:", sound);
+                await sound.pause();
+                console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
+                    "Test failure:  sound add: key string for test sound did not persist" +
+                    " over reload: " + comboSounds.options[0].value
+                );
 
-            comboSounds.selectedIndex = 0;
-            comboSounds.dispatchEvent(new Event("change"));
-            // Wait two cycles for updateCurrentSound to be called.
-            await new Promise(r => setTimeout(r, 1));
-            await new Promise(r => setTimeout(r, 1));
-            await buttonSoundRemove.click();
-            console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
-                'Test failure:  sound add: apparently could not remove "silent" sound.'
-            );
+                comboSounds.selectedIndex = 0;
+                comboSounds.dispatchEvent(new Event("change"));
+                // Wait two cycles for updateCurrentSound to be called.
+                await new Promise(r => setTimeout(r, 1));
+                await new Promise(r => setTimeout(r, 1));
+                await buttonSoundRemove.click();
+                console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
+                    'Test failure:  sound add: apparently could not remove "silent" sound.'
+                );
 
+            }
             console.warn("Please reload page for sound add test to continue.");
             //window.location.reload();
 
