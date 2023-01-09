@@ -1,15 +1,8 @@
 
 Next:
-tests
-unit tests. Who needs jest? Just bake it in and note to remove it.
-    DEBUG_FLAG should be in localStorage so I can test in production.
-    
-Manual tests:
-    Start new window with no database. Expect "Upgrade needed", "Creating store"
-
-
-use console.log instead of console.debug for Test complete messages.
 retrim audio elements--most of these loops should be WAY shorter.
+    Looking at it in order of size:
+        car alarm, squeaky, wiegenlied, crickets, ducks, slow bell
 firefox accessibility helper
 Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
     descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
@@ -35,6 +28,9 @@ follow style guide at https://www.crockford.com/code.html
 CentOS best practices email
     Forbid .. "directory traversal attack"
     non-reused password
+Run tests:
+    With debug flag
+    Start new window with no database. Expect "Upgrade needed", "Creating store"
 
 
 Later:
@@ -53,6 +49,7 @@ tests
     remove a sound
     automated unit testing
 Test cross platform
+    fail gracefully on Safari wrt indexeddb
     looks bad on older firefox I guess?
     apple?
     android!!!
