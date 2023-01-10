@@ -1047,7 +1047,7 @@ if (SHINY_TIMER_DEBUG) {
         //  so the order in the combobox is the same as in the textarea.
         let objectStore = undefined;
         try {
-            let objectStore = await fetchObjectStore("readwrite");
+            objectStore = await fetchObjectStore("readwrite");
         } catch (e) {
             console.warn("buttonSoundAdd: Could not fetch IndexedDB to add sound persistently.");
         }
@@ -1061,8 +1061,8 @@ if (SHINY_TIMER_DEBUG) {
                 return;
             }
 
-            let object = {id:n, file:f};
             if (objectStore !== undefined) {
+                let object = {id:n, file:f};
                 let request = objectStore.add(object);
                 request.onerror = function(e) {
                     // Note if people add sounds from multiple tabs we'll get a duplicate key error.

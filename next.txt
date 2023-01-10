@@ -1,5 +1,6 @@
 
 Next:
+what happens if urlParameters are invalid?
 retrim audio elements--most of these loops should be WAY shorter.
     Looking at it in order of size:
         car alarm, squeaky, wiegenlied, crickets, ducks, slow bell
