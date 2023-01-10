@@ -1045,7 +1045,12 @@ if (SHINY_TIMER_DEBUG) {
 
         // Iterate in reverse order,
         //  so the order in the combobox is the same as in the textarea.
-        let objectStore = await fetchObjectStore("readwrite");
+        let objectStore = undefined;
+        try {
+            let objectStore = await fetchObjectStore("readwrite");
+        } catch (e) {
+            console.warn("buttonSoundAdd: Could not fetch IndexedDB to add sound persistently.");
+        }
         for (let i = files.length - 1; i >= 0; i--) {
             let f = files[i]; let n = names[i];
             if (n in sounds) {
@@ -1057,11 +1062,13 @@ if (SHINY_TIMER_DEBUG) {
             }
 
             let object = {id:n, file:f};
-            let request = objectStore.add(object);
-            request.onerror = function(e) {
-                // Note if people add sounds from multiple tabs we'll get a duplicate key error.
-                console.error(e);
-            };
+            if (objectStore !== undefined) {
+                let request = objectStore.add(object);
+                request.onerror = function(e) {
+                    // Note if people add sounds from multiple tabs we'll get a duplicate key error.
+                    console.error(e);
+                };
+            }
             addNamedSound(n, f);
         }
         if (!launchPlayLock) {

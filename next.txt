@@ -3,9 +3,9 @@ Next:
 retrim audio elements--most of these loops should be WAY shorter.
     Looking at it in order of size:
         car alarm, squeaky, wiegenlied, crickets, ducks, slow bell
-Make sure that there are no fatal errors with loading the database; if something goes wrong, the default sounds etc. should still work.
     descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
     handle when quota is exceeded
+follow style guide at https://www.crockford.com/code.html
 make variable names more consistent
     rename "wait-for-entry" something descriptive
     update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
@@ -23,13 +23,13 @@ make the page pretty
     Put the sound managment stuff in a dialogue or box or something
 const instead of let
 warn user on making a url for state=ringing that autoplay may be forbidden
-follow style guide at https://www.crockford.com/code.html
 CentOS best practices email
     Forbid .. "directory traversal attack"
     non-reused password
 Run tests:
     With debug flag
     Start new window with no database. Expect "Upgrade needed", "Creating store"
+compress that horrible long WET state test
 
 
 Later:
