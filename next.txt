@@ -27,6 +27,7 @@ Run tests:
     With debug flag
     Start new window with no database. Expect "Upgrade needed", "Creating store"
 compress that horrible long WET state test
+duplicate sounds names are apparently permitted somehow? E.g. add "Alarm (digital)". weird.
 
 
 Later:

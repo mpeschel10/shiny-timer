@@ -124,7 +124,7 @@ if (SHINY_TIMER_DEBUG) {
                 request.onsuccess = function(event) {
                     try {
                         let result = event.currentTarget.result;
-                        addNamedSound(result.id, result.file);
+                        addNamedSound(result.id, getSound(result.file));
                         resolve(result.id);
                     } catch (error) {
                         if (SHINY_TIMER_DEBUG && (key === SHINY_TIMER_DEBUG_FAKE_KEY)) {
@@ -1016,13 +1016,15 @@ if (SHINY_TIMER_DEBUG) {
         });
     }
 
-    function addNamedSound(name, file) {
-        console.debug("addNamedSound: ", name, file);
+    function getSound(file) { return new Audio(URL.createObjectURL(file)); }
+    function addNamedSound(name, sound) {
+        console.debug("addNamedSound: ", name, sound);
         let option = document.createElement("option");
         option.appendChild(document.createTextNode(name));
         option.value = name;
 
-        sounds[name] = new Audio(URL.createObjectURL(file));
+        sounds[name] = sound;
+        sound.loop = true;
         comboSounds.prepend(option);
     }
 
@@ -1043,16 +1045,30 @@ if (SHINY_TIMER_DEBUG) {
             return;
         }
 
-        let namesSeen = {};
-        for (let name of names) {
-            if (name in sounds || name in namesSeen) {
+        let checkedSounds = {};
+        for (let i = 0; i < names.length; i++) {
+            let file = files[i]; let name = names[i];
+            if (name in sounds || name in checkedSounds) {
                 alert(
                     'Error: Duplicate sound name "' + name + '".\n' +
                     "Either remove that sound first or choose a different name."
                 );
                 return;
             }
-            namesSeen[name] = true;
+
+            let sound = getSound(file);
+            try {
+                await sound.play();
+                await sound.pause();
+            } catch (e) {
+                alert(
+                    'Error: Cannot play sound "' + name + '".\n' +
+                    "Most browsers only understand .wav, .mp3, and .ogg,\n" +
+                    "except for Safari, which does not understand .ogg."
+                );
+                return;
+            }
+            checkedSounds[name] = sound;
         }
 
         // Iterate in reverse order,
@@ -1064,17 +1080,18 @@ if (SHINY_TIMER_DEBUG) {
             console.warn("buttonSoundAdd: Could not fetch IndexedDB to add sound persistently.");
         }
 
-        for (let i = files.length - 1; i >= 0; i--) {
-            let f = files[i]; let n = names[i];
+        for (let i = names.length - 1; i >= 0; i--) {
+            let name = names[i]; let sound = checkedSounds[name];
             if (objectStore !== undefined) {
-                let object = {id:n, file:f};
+                let file = files[i];
+                let object = {id:name, file:file};
                 let request = objectStore.add(object);
                 request.onerror = function(e) {
                     // Note if people add sounds from multiple tabs we'll get a duplicate key error.
                     console.error(e);
                 };
             }
-            addNamedSound(n, f);
+            addNamedSound(name, sound);
         }
 
         if (!launchPlayLock) {
