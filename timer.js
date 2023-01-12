@@ -1043,14 +1043,16 @@ if (SHINY_TIMER_DEBUG) {
             return;
         }
 
+        let namesSeen = {};
         for (let name of names) {
-            if (n in sounds) {
+            if (name in sounds || name in namesSeen) {
                 alert(
-                    'Error: Duplicate sound name "' + n + '".\n' +
+                    'Error: Duplicate sound name "' + name + '".\n' +
                     "Either remove that sound first or choose a different name."
                 );
                 return;
             }
+            namesSeen[name] = true;
         }
 
         // Iterate in reverse order,
