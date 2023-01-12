@@ -1043,6 +1043,16 @@ if (SHINY_TIMER_DEBUG) {
             return;
         }
 
+        for (let name of names) {
+            if (n in sounds) {
+                alert(
+                    'Error: Duplicate sound name "' + n + '".\n' +
+                    "Either remove that sound first or choose a different name."
+                );
+                return;
+            }
+        }
+
         // Iterate in reverse order,
         //  so the order in the combobox is the same as in the textarea.
         let objectStore = undefined;
@@ -1051,16 +1061,9 @@ if (SHINY_TIMER_DEBUG) {
         } catch (e) {
             console.warn("buttonSoundAdd: Could not fetch IndexedDB to add sound persistently.");
         }
+
         for (let i = files.length - 1; i >= 0; i--) {
             let f = files[i]; let n = names[i];
-            if (n in sounds) {
-                alert(
-                    'Error: Duplicate sound name "' + n + '".\n' +
-                    "Either remove that sound first or choose a different name."
-                );
-                return;
-            }
-
             if (objectStore !== undefined) {
                 let object = {id:n, file:f};
                 let request = objectStore.add(object);
@@ -1071,6 +1074,7 @@ if (SHINY_TIMER_DEBUG) {
             }
             addNamedSound(n, f);
         }
+
         if (!launchPlayLock) {
             comboSounds.selectedIndex = 0;  // since we prepend new options, first option will be new
             comboSounds.dispatchEvent(new Event("change"));
