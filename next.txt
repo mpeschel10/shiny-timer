@@ -1,10 +1,6 @@
 
 Next:
-what happens if urlParameters are invalid?
-retrim audio elements--most of these loops should be WAY shorter.
-    Looking at it in order of size:
-        car alarm, squeaky, wiegenlied, crickets, ducks, slow bell
-    descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
+descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
     handle when quota is exceeded
 follow style guide at https://www.crockford.com/code.html
 make variable names more consistent
