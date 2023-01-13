@@ -1,22 +1,23 @@
 "use strict";
 
-const SHINY_TIMER_DEBUG = localStorage.getItem("shinyTimerDebug") === "true";
-const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key that should not have an associated File in IndexedDB.\n\nUsed for testing error handling of an inconsistency in the database.";
-const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake comboSounds option value that should not have an associated Audio in sounds.\n\nUsed for testing error handling of audio that doesn't load.";
-const SHINY_TIMER_DEBUG_SOUND_ADD = "fake comboSounds option value that should have an associated File in IndexedDB. Used for testing that Audio can be persistently stored and loaded.";
-
-const SILENT_WAV = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
-
-if (SHINY_TIMER_DEBUG) {
-    window.shiny_timer_debug_reload_count = localStorage.getItem("reloadCount");
-    if (shiny_timer_debug_reload_count === null) {
-        shiny_timer_debug_reload_count = 0;
-    }
-    shiny_timer_debug_reload_count = shiny_timer_debug_reload_count * 1;
-}
-
 (() => {
-    const reDigits = /[\d\.]/; // Hint to the user this is numbers only
+// Hint to the user that timer inputs are numbers
+    const reDigits = /[\d\.]/;
+
+    const SHINY_TIMER_DEBUG = localStorage.getItem("shinyTimerDebug") === "true";
+    const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key for testing database error handling.\n";
+    const SHINY_TIMER_DEBUG_BAD_AUDIO = "fake key for testing Audio load error handling.\n";
+    const SHINY_TIMER_DEBUG_SOUND_ADD = "fake key for testing Audio persistence.";
+
+    const SILENT_WAV = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
+
+    if (SHINY_TIMER_DEBUG) {
+        window.shiny_timer_debug_reload_count = localStorage.getItem("reloadCount");
+        if (shiny_timer_debug_reload_count === null) {
+            shiny_timer_debug_reload_count = 0;
+        }
+        shiny_timer_debug_reload_count = +shiny_timer_debug_reload_count;
+    }
 
     var pClock;
     var fieldHours, fieldMinutes, fieldSeconds;
@@ -28,8 +29,9 @@ if (SHINY_TIMER_DEBUG) {
     let buttonSoundRemove;
     let buttonURL; let fieldURL;
 
-    let intervalID; // Capitalize D because that's how it is in the docs
-    let launchPlayLock = false; // hideSound normally updates index as it goes; forbid that during launchPlay.
+    let intervalID;
+// hideSound() normally updates comboSounds.selected; forbid that during launchPlay().
+    let launchPlayLock = false;
 
     const DB_NAME = 'shiny-timer-sounds';
     const DB_VERSION = 1;
@@ -43,26 +45,28 @@ if (SHINY_TIMER_DEBUG) {
             timeLeft: 0,
             resetTime: ["", "5", ""],
             state: "wait_for_entry",
-            // states: wait_for_entry, running, paused, ringing, rung
-            // difference between wait_for_entry and paused
-            // is that paused remembers a reset value.
+// states: wait_for_entry, running, paused, ringing, rung
+// The difference between wait_for_entry and paused
+//  is that paused remembers a reset value.
         };
     }
     timer = makeTimer();
 
-  /*"silent" is a default sound so that currentSound will never be null.
-    I generated the URI using Steve Wittens' "JavaScript audio synthesizer"
-     http://acko.net/files/audiosynth/index.html
-    as described on his blog:
-     https://acko.net/blog/javascript-audio-synthesis-with-html-5/
-    The URI (I think) consists of a WAVE file consisting of a single 0.
-    Since this is purely generated data, I do not believe it is subject to copyright or licensing; I am not a lawyer.
-    I'm not sure if I'm being too clever with this or not.
-    The alternative is to just throw in a bunch of null/undefined checks (maybe only undefined)
-     every time we would access currentSound.
-    That seems more robust at runtime, and also avoids hard-coding a file,
-     but also more error-prone to code,
-     and also would require machinery for tracking if a sound should continue to play or not while we change selections.*/
+/*
+"silent" is a default sound so that currentSound will never be null.
+I generated the URI using Steve Wittens' "JavaScript audio synthesizer"
+ http://acko.net/files/audiosynth/index.html
+as described on his blog:
+ https://acko.net/blog/javascript-audio-synthesis-with-html-5/
+The URI (I hope) consists of a WAVE file consisting of a single 0.
+Since this is generated data, I think it is copyrighted; I am not a lawyer.
+I don't know if this solution is too clever:
+The alternative is to throw in a bunch of null/undefined checks
+ every time we would access currentSound.
+That seems more robust at runtime, and also avoids hard-coding a WAV file,
+ but also more error-prone to write,
+ and also would need us to manually track if a sound should continue to play or not
+ while we change comboSound.selectedIndex.*/
     var sounds = {
         "silent": new Audio(SILENT_WAV)
     }
@@ -71,12 +75,11 @@ if (SHINY_TIMER_DEBUG) {
     sounds["silent"].loop = true;
     var currentSound = sounds["silent"];
 
-     /* Error function if a sound fails to load.
-        Should remove the sound from the comboBox so user can't select it.
-        Should not remove it from sounds since I'm worried about a race condition
-         where the default sound fails to load, but still gets selected as currentSound by init()
-         and then the user can fire the alarm, change currentSound, and reset() will be unable
-         to turn the sound off.*/
+/*
+Error function if a sound fails to load.
+Should remove option from comboSounds so user can't select it.
+Should not remove Audio from sounds,
+ so onReset() will always be able to pause "all" sounds.*/
     function hideSound(path) {
         if (!(SHINY_TIMER_DEBUG && path === SHINY_TIMER_DEBUG_BAD_AUDIO))
             console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
@@ -98,19 +101,19 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     function fetchIDBKeys(database) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             let request = database.transaction([DB_STORE_NAME], "readonly").objectStore(DB_STORE_NAME).getAllKeys();
-            request.onsuccess = function(e) {
+            request.onsuccess = function (e) {
                 resolve(e.currentTarget.result);
             };
-            request.onerror = function(e) {
+            request.onerror = function (e) {
                 console.error("Failed to get names/keys for loading stored sounds.");
                 reject(e);
             };
         });
     }
 
-    // Returns a promise which will resolve when all sounds are loaded.
+// Returns a promise which will resolve when all sounds are loaded.
     function loadIDBSoundsFromKeys(database, keys) {
         let transaction = database.transaction([DB_STORE_NAME], "readonly");
         let store = transaction.objectStore(DB_STORE_NAME);
@@ -119,9 +122,9 @@ if (SHINY_TIMER_DEBUG) {
             console.debug("Test note:     reject fake key: using keys:", keys);
         }
         return Promise.allSettled(keys.map(key => 
-            new Promise(function(resolve, reject) {
+            new Promise(function (resolve, reject) {
                 let request = store.get(key);
-                request.onsuccess = function(event) {
+                request.onsuccess = function (event) {
                     try {
                         let result = event.currentTarget.result;
                         addNamedSound(result.id, getSound(result.file));
@@ -137,7 +140,7 @@ if (SHINY_TIMER_DEBUG) {
                     }
                 };
 
-                request.onerror = function(e) {
+                request.onerror = function (e) {
                     console.error("Transaction failure while loading sound from", key);
                     console.error(e);
                     reject(e);
@@ -146,7 +149,7 @@ if (SHINY_TIMER_DEBUG) {
         ));
     }
 
-    // Returns a promise which will resolve when all sounds are loaded.
+// Returns a promise which will resolve when all sounds are loaded.
     async function loadIDBSounds(database) {
         let keys = await fetchIDBKeys(database);
         return loadIDBSoundsFromKeys(database, keys);
@@ -156,7 +159,8 @@ if (SHINY_TIMER_DEBUG) {
         for (let option of comboSounds) {
             let path = option.value;
             defaultSounds[path] = true;
-            // "silent" sound is loaded immediately after <head> element; loadSounds isn't responsible.
+// "silent" sound is loaded immediately after <head> element;
+//  loadSounds isn't responsible for it.
             if (path === "silent")
                 continue;
             sounds[path] = new Audio("sounds/" + path);
@@ -214,15 +218,14 @@ if (SHINY_TIMER_DEBUG) {
 
         buttonURL.addEventListener("click", onButtonURL);
 
-        // Form data may persist over reloads,
-        //  so update all the boxes.
+// Form data may persist over reloads, so update all the boxes.
         onFileSoundAddChange();
-        updateCurrentSound(); 
+        updateCurrentSound();
 
-        if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count == 2) {
+        if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             comboSounds.selectedIndex = 0;
             comboSounds.dispatchEvent(new Event("change"));
-            // Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for updateCurrentSound to be called.
             await new Promise(r => setTimeout(r, 1));
             await new Promise(r => setTimeout(r, 1));
             await launchPlay();
@@ -231,14 +234,14 @@ if (SHINY_TIMER_DEBUG) {
             buttonReset.click();
             console.debug("Test bad sound complete.");
         }
-        // Note applyParameters is performed after all our elements varaiables (buttonReset etc)
-        //  have been acquired.
+// applyParameters runs after element variables (buttonReset etc) are initialized
+//  and all comboSounds options are loaded.
         loadingSoundsPromise.then(loadedSounds =>
             applyParameters(new URLSearchParams(window.location.search))
         ).catch(console.error);
 
-        // Update clock and show parameters immediately on page load
-        update(); 
+// Update clock and show urlParameters immediately on page load
+        update();
         intervalID = setInterval(update, 500);
 
         if (SHINY_TIMER_DEBUG) {
@@ -254,15 +257,15 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     async function testState() {
-        //                 δ |startpause | reset | fieldChange | updateTimer0 |
-        //                   __________________________________________________
-        // W: Wait_for_entry |    R      |  W    |      W      |              |
-        // R: Running        |    P      |  W    |      W      |       I      |
-        // P: Pause          |    R      |  W    |      W      |              |
-        // I: rInging        |    G      |  W    |      W      |              |
-        // G: runG           |    G      |  W    |      W      |              |
-        // Don't bother testing every fieldChange permutation; as long as it calls
-        //  buttonReset we should be fine
+//                 δ |startpause | reset | fieldChange | updateTimer0 |
+//                   __________________________________________________
+// W: Wait_for_entry |    R      |  W    |      W      |              |
+// R: Running        |    P      |  W    |      W      |       I      |
+// P: Pause          |    R      |  W    |      W      |              |
+// I: rInging        |    G      |  W    |      W      |              |
+// G: runG           |    G      |  W    |      W      |              |
+// Don't bother testing every fieldChange permutation;
+//  as long as onFieldChange calls buttonReset we should be fine.
 
         const playingCount = () => Object.values(sounds).filter(a => !a.paused).length;
         
@@ -459,7 +462,7 @@ if (SHINY_TIMER_DEBUG) {
             try {
                 await audio.play();
                 await audio.pause();
-            } catch(e) {
+            } catch (e) {
                 console.error("Test failure:  sounds all load: could not play sound with key",
                     key, "due to error", e
                 );
@@ -483,7 +486,7 @@ if (SHINY_TIMER_DEBUG) {
         );
         comboSounds.selectedIndex = 12;
         comboSounds.dispatchEvent(new Event("change"));
-        // Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for updateCurrentSound to be called.
         await new Promise(r => setTimeout(r, 1));
         await new Promise(r => setTimeout(r, 1));
         let expectedSound = sounds[comboSounds.value];
@@ -508,18 +511,18 @@ if (SHINY_TIMER_DEBUG) {
         if (shiny_timer_debug_reload_count === 0) {
             console.debug("Test note:     sound add: First reload; create file and add.");
             localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
-            // Borrowed from https://stackoverflow.com/a/38935990/6286797
+// Borrowed from https://stackoverflow.com/a/38935990/6286797
             let arr = SILENT_WAV.split(','),
                 mime = arr[0].match(/:(.*?);/)[1],
                 bstr = atob(arr[1]),
                 n = bstr.length,
                 u8arr = new Uint8Array(n);
-            while (n--){
+            while (n--) {
                 u8arr[n] = bstr.charCodeAt(n);
             }
 
-            // I can't figure out how to spoof a FileList for a test,
-            //  so just replace the whole element lol.
+// I can't figure out how to spoof a FileList for a test,
+//  so just replace the whole element lol.
             fileSoundAdd = {files:[new File([u8arr], SHINY_TIMER_DEBUG_SOUND_ADD, {type:mime})]};
             onFileSoundAddChange();
             await onButtonSoundAdd();
@@ -542,12 +545,12 @@ if (SHINY_TIMER_DEBUG) {
                 " to comboSounds: " + comboSounds.options[0].value);
 
             console.warn("Please reload page for sound add test to continue.");
-            //window.location.reload();
+//window.location.reload();
 
         } else if (shiny_timer_debug_reload_count === 1) {
             console.debug("Test note:     add sound: Second reload; play file and discard.");
             localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
-            // Expect persistent storage to have test_silent_sound_name as a playable thing
+// Expect persistent storage to have test_silent_sound_name as a playable thing
             let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
             try {
                 await sound.play();
@@ -569,7 +572,7 @@ if (SHINY_TIMER_DEBUG) {
 
                 comboSounds.selectedIndex = 0;
                 comboSounds.dispatchEvent(new Event("change"));
-                // Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for updateCurrentSound to be called.
                 await new Promise(r => setTimeout(r, 1));
                 await new Promise(r => setTimeout(r, 1));
                 await buttonSoundRemove.click();
@@ -579,7 +582,7 @@ if (SHINY_TIMER_DEBUG) {
 
             }
             console.warn("Please reload page for sound add test to continue.");
-            //window.location.reload();
+//window.location.reload();
 
         } else if (shiny_timer_debug_reload_count >= 2) {
             console.assert(comboSounds.options[0].value !== SHINY_TIMER_DEBUG_SOUND_ADD,
@@ -598,8 +601,8 @@ if (SHINY_TIMER_DEBUG) {
         newOption.value = SHINY_TIMER_DEBUG_BAD_AUDIO
         newOption.appendChild(document.createTextNode(SHINY_TIMER_DEBUG_BAD_AUDIO));
         _comboSounds.prepend(newOption);
-        // Note that, because loadDefaultSounds is called after this, our bad child
-        //  will acquire an associated Audio element, which will be eventually discarded.
+// Note that, because loadDefaultSounds is called after this, our bad child
+//  will acquire an associated Audio element, which will be eventually discarded.
     }
 
     async function testSilent() {
@@ -612,7 +615,7 @@ if (SHINY_TIMER_DEBUG) {
         console.assert(!sounds["silent"].paused, "Test failure:  expected 'silent' to not be paused after playing it.");
         try {
             await sounds["silent"].pause();
-        } catch(e) {
+        } catch (e) {
             console.error("Test failure:  pause 'silent' failed:", e);
         }
         console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be paused after pausing it.");
@@ -631,7 +634,7 @@ if (SHINY_TIMER_DEBUG) {
     function getOptionsIndex(selectedPath) {
         for (let i = 0; i < comboSounds.options.length; i++) {
             let option = comboSounds.options[i];
-            if(option.value === selectedPath) {
+            if (option.value === selectedPath) {
                 return i;
             }
         }
@@ -642,13 +645,13 @@ if (SHINY_TIMER_DEBUG) {
         if (SHINY_TIMER_DEBUG) {
             window.shiny_timer_debug_parameters_applied = true;
         }
-        // Problem: half the state is stored in the fieldHours etc and comboSounds,
-        //  and there's no dry way to change the state AND update the UI without firing events.
-        // Unfortunately, this function will have to be completely revised any time you change
-        //  the state model. Hopefully you won't have to, ya?
+// Problem: half the state is stored in the fieldHours etc and comboSounds,
+//  and there's no dry way to change the state AND update the UI without firing events.
+// Unfortunately, this function will have to be completely revised any time you change
+//  the state model. Hopefully you won't have to, ya?
 
-        // Ok. This fn is a kludgy, stateful mess.
-        // First select the sound, which is less coupled than the rest.
+// Ok. This fn is a kludgy, stateful mess.
+// First select the sound, which is less coupled than the rest.
         if (!launchPlayLock) {
             let selectedPath = parameters.get("selectedPath");
             if (selectedPath !== null) {
@@ -668,14 +671,14 @@ if (SHINY_TIMER_DEBUG) {
             resetTime = parseFloat(resetTime);
             resetTime = secondsToHoursMinutesSeconds(resetTime);
             timer.resetTime = resetTime;
-            // The state stanza may invoke buttonStartPause.click(), and the fields will then
-            //  override timer.resetTime.
-            // It's ok bc. resetFields duplicates the state from timer.resetTime to the fields.
+// The state stanza may invoke buttonStartPause.click(), and the fields will then
+//  override timer.resetTime.
+// It's ok bc. resetFields duplicates the state from timer.resetTime to the fields.
             resetFields();
         }
 
-        // state parameter is handled by just faking a bunch of user inputs.
-        // timeLeft stanza SHOULD be after state stanza, to override endTime set here.
+// state parameter is handled by just faking a bunch of user inputs.
+// timeLeft stanza SHOULD be after state stanza, to override endTime set here.
         let state = parameters.get("state");
         if (state !== null) {
             if (state === "wait_for_entry") {
@@ -698,19 +701,19 @@ if (SHINY_TIMER_DEBUG) {
             }
         }
 
-        // timeLeft should follow state stanza, to override it if e.g. state=rung&timeLeft=14
+// timeLeft should follow state stanza, to override it if e.g. state=rung&timeLeft=14
         let timeLeft = parameters.get('timeLeft');
         if (timeLeft !== null) {
             timeLeft = parseInt(timeLeft);
             timer.timeLeft = timeLeft;
             timer.endTime = Date.now() + timeLeft * 1000;
-            // updateDisplay() should be called after this applyParameters anyway...
+// updateDisplay() should be called after this applyParameters anyway...
         }
 
     }
 
     function onButtonURL(e) {
-        // URL has four fields: resetTime, selectedIndex, state, and timeLeft.
+// URL has four fields: resetTime, selectedPath, state, and timeLeft.
         let u = new URL(window.location);
         let s = u.searchParams;
         s.set("state", timer.state);
@@ -739,6 +742,7 @@ if (SHINY_TIMER_DEBUG) {
         return [hours, minutes, seconds];
     }
 
+// Play a sound. Prefer currentSound, but search comboSounds.options if necessary.
     async function launchPlay() {
         try {
             launchPlayLock = true;
@@ -799,16 +803,11 @@ if (SHINY_TIMER_DEBUG) {
     function updateDisplay() {
         pClock.innerHTML = Date();
 
-        // I am beginning to suspect I should have just made
-        //  several different buttons to enable/diasble, rather than
-        //  try to "guess" what the user intent is from
-        //  the display text.
-        if (timer.state !== "wait_for_entry")
-        {
+// Display time in the same text inputs used to input time.
+        if (timer.state !== "wait_for_entry") {
             let hms = secondsToHoursMinutesSeconds(timer.timeLeft);
-            // Preserve user selection while updating the field.
-            for (let i = 0; i < timeFields.length; i++)
-            {
+// Preserve user selection while updating each field.
+            for (let i = 0; i < timeFields.length; i++) {
                 let f = timeFields[i];
                 let s = f.selectionStart; let e = f.selectionEnd;
                 f.value = hms[i];
@@ -832,21 +831,21 @@ if (SHINY_TIMER_DEBUG) {
         currentSound = sounds[comboSounds.value];
         if (shouldPlay && currentSound) {
             currentSound.currentTime = 0;
-            // suppress nuisance "error" if the user switches sounds very fast.
-            // "Uncaught (in promise) DOMException: The fetching process for the media resource
-            //  was aborted by the user agent at the user's request.
+// suppress nuisance "error" if the user switches sounds very fast.
+// "Uncaught (in promise) DOMException: The fetching process for the media resource
+//  was aborted by the user agent at the user's request.
             currentSound.play().catch(() => {});
         }
     }
 
     function onKeyPress(e) {
-        // Forbid non-digits from being typed.
-        // Note that the user can still paste non-numbers in!
-        // Forbidding letters only hints that this input should be numbers.
+// Forbid non-digits from being typed.
+// Note that the user can still paste non-numbers in!
+// Forbidding non-digits is only a hint.
         console.log(e);
         if (e.key === "Enter" ) {
             buttonStartPause.click();
-        } else if (! reDigits.test(e.key)) {
+        } else if (!reDigits.test(e.key)) {
             e.preventDefault();
         } else if (timer.state !== "wait_for_entry") {
             onReset(e, false);
@@ -854,9 +853,10 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     function onKeyDown(e) {
-        // If it's an arrow key, maybe jump from box to box.
-        // I can't do this in onKeyPress since arrows don't fire that event
-        let field = e.target; let i = field.selectionStart;
+// If it's an arrow key, maybe jump from box to box.
+// I can't do this in onKeyPress since arrows don't fire keypress events.
+        let field = e.target;
+        let i = field.selectionStart;
         let targetField = null;
         if (e.key === "ArrowLeft" && i === 0) {
             if (field === fieldMinutes) targetField = fieldHours;
@@ -881,19 +881,20 @@ if (SHINY_TIMER_DEBUG) {
 
     function parseTime(fields) {
         try {
-            // Multiply the strings by numbers to convert
-            //  because for some incomprehenisble reason, "parseFloat"
-            //  of empty string is NaN
+// Use + to convert to number because for some incomprehenisble reason,
+//  "parseFloat" of empty string is NaN
             let maybeSeconds = 0;
             for (let f of fields) {
-                maybeSeconds = maybeSeconds * 60 + (f.value * 1);
+                maybeSeconds = maybeSeconds * 60 + (+f.value);
             }
-            // I could have written something complicated to extract
-            // a useable value no matter what,
-            //  but I think it is safer to fire the alarm immediately
-            //  so the user knows something is wrong.
-            if (Number.isNaN(maybeSeconds))
+// I could have written something complicated to extract
+// a useable value no matter what,
+//  but I think it is safer to fire the alarm immediately
+//  so the user knows something is wrong.
+            if (Number.isNaN(maybeSeconds)) {
+                alert("Cannot parse time. Did you enter a letter somewhere?");
                 return 0;
+            }
             return maybeSeconds;
         } catch (e) {
             return 0;
@@ -908,27 +909,31 @@ if (SHINY_TIMER_DEBUG) {
 
     function onReset(e, shouldResetFields=true) {
         for (const key of Object.keys(sounds)) {
-            if (sounds[key]) { // Should always be true.
+// Hopefully, this undefined check is redundant.
+            if (sounds[key]) { 
                 sounds[key].pause();
             }
         }
         if (currentSound) {
-            currentSound.pause() // Hopefully redundant.
+// Hopefully redundant.
+            currentSound.pause()
         };
 
-        // ignore launchPlayLock
-        if (comboSounds.selectedIndex < 0) {
+// Ignore launchPlayLock to "fix" comboSounds.selectedIndex out of bounds.
+        if (comboSounds.selectedIndex < 0 ||
+            comboSounds.selectedIndex >= comboSounds.options.length
+        ) {
             comboSounds.selectedIndex = 0;
-        } else if (comboSounds.selectedIndex >= comboSounds.options.length) {
-            comboSounds.selectedIndex = 0; // last sound is silent, so select first sound instead.
         }
 
         buttonStartPause.value = "Start";
         if (shouldResetFields) {
             resetFields();
         }
-        timer = makeTimer(); // timer.state = "wait_for_entry";
-        updateCurrentSound();   // Hopefully redundant.
+// makeTimer() will set timer.state to "wait_for_entry"
+        timer = makeTimer();
+// Hopefully redundant.
+        updateCurrentSound();
         fieldDummyBorder.style.visibility = "visible";
     }
 
@@ -960,7 +965,7 @@ if (SHINY_TIMER_DEBUG) {
                 currentSound.pause();
             fieldDummyBorder.style.visibility = "visible";
         }
-        // else if (timer.state === "rung")
+// else if (timer.state === "rung")
     }
 
     function getMaxLength(a) {
@@ -992,7 +997,7 @@ if (SHINY_TIMER_DEBUG) {
     }
 
     function fetchDatabase() {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             let databaseRequest = indexedDB.open(DB_NAME, DB_VERSION);
             databaseRequest.onsuccess = (e) => {
                 resolve(databaseRequest.result);
@@ -1004,7 +1009,7 @@ if (SHINY_TIMER_DEBUG) {
                 reject(e);
             };
 
-            databaseRequest.onupgradeneeded = function(e) {
+            databaseRequest.onupgradeneeded = function (e) {
                 console.log("Upgrade needed (presumably also first run of database?");
                 let database = e.currentTarget.result;
                 if (!database.objectStoreNames.contains(DB_STORE_NAME))
@@ -1016,7 +1021,10 @@ if (SHINY_TIMER_DEBUG) {
         });
     }
 
-    function getSound(file) { return new Audio(URL.createObjectURL(file)); }
+    function getSound(file) {
+        return new Audio(URL.createObjectURL(file));
+    }
+
     function addNamedSound(name, sound) {
         console.debug("addNamedSound: ", name, sound);
         let option = document.createElement("option");
@@ -1047,7 +1055,8 @@ if (SHINY_TIMER_DEBUG) {
 
         let checkedSounds = {};
         for (let i = 0; i < names.length; i++) {
-            let file = files[i]; let name = names[i];
+            let file = files[i];
+            let name = names[i];
             if (name in sounds || name in checkedSounds) {
                 alert(
                     'Error: Duplicate sound name "' + name + '".\n' +
@@ -1071,8 +1080,8 @@ if (SHINY_TIMER_DEBUG) {
             checkedSounds[name] = sound;
         }
 
-        // Iterate in reverse order,
-        //  so the order in the combobox is the same as in the textarea.
+// Iterate in reverse order,
+//  so the order in the combobox is the same as in the textarea.
         let objectStore = undefined;
         try {
             objectStore = await fetchObjectStore("readwrite");
@@ -1081,13 +1090,14 @@ if (SHINY_TIMER_DEBUG) {
         }
 
         for (let i = names.length - 1; i >= 0; i--) {
-            let name = names[i]; let sound = checkedSounds[name];
+            let name = names[i];
+            let sound = checkedSounds[name];
             if (objectStore !== undefined) {
                 let file = files[i];
                 let object = {id:name, file:file};
                 let request = objectStore.add(object);
-                request.onerror = function(e) {
-                    // Note if people add sounds from multiple tabs we'll get a duplicate key error.
+                request.onerror = function (e) {
+// Note if people add sounds from multiple tabs we'll get duplicate key error.
                     console.error(e);
                 };
             }
@@ -1095,7 +1105,7 @@ if (SHINY_TIMER_DEBUG) {
         }
 
         if (!launchPlayLock) {
-            comboSounds.selectedIndex = 0;  // since we prepend new options, first option will be new
+            comboSounds.selectedIndex = 0;  // First option will be new since we prepend sounds.
             comboSounds.dispatchEvent(new Event("change"));
         }
 
@@ -1128,11 +1138,13 @@ if (SHINY_TIMER_DEBUG) {
         comboSounds.remove(i);
 
         let id = option.value;
-        sounds[id].pause(); // Should be redundant.
-        delete sounds[id]; // Free up space, I hope.
+// Hopefully redundant.
+        sounds[id].pause();
+// Hopefully free resources used by that sound.
+        delete sounds[id];
         if (!(id in defaultSounds)) {
             console.log("Deleting from IndexedDB (persistent storage)...");
-            fetchObjectStore("readwrite").then(function(objectStore) {
+            fetchObjectStore("readwrite").then(function (objectStore) {
                 objectStore.delete(id).onerror = function (e) {
                     console.error(e);
                 };

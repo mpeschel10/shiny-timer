@@ -1,8 +1,5 @@
 
 Next:
-descriptive error for adding sound file failing e.g. if the file cannot be decoded (Safari)--Audio().addEventListener("fail", (()=>{alert("Failure")}));
-    handle when quota is exceeded
-follow style guide at https://www.crockford.com/code.html
 make variable names more consistent
     rename "wait-for-entry" something descriptive
     update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
@@ -31,7 +28,7 @@ duplicate sounds names are apparently permitted somehow? E.g. add "Alarm (digita
 
 
 Later:
-add mp3s for safari
+don't be a purist. Just use mp3s. I'm sorry, ogg...
 misc. accessibility?
     aria roles - label button-start-pause as switch functionality.
 option to clear indexedDB all at once
@@ -80,5 +77,7 @@ Proper solution for detecting when the user is trying to change the inputs for t
     Specifically, we now listen specifically for digit keypresses and delete or backspace keydowns.
     But you can change the timer other ways! E.g. pasting. So it would be best to listen for true changes. For every keydown, record the state of the entry. Then when keyup, if entry.value is different, we know the user is inputing something somehow, and we should pause.
 test debian copyright notice (get linter?)
+handle when quota is exceeded
+    can't trigger the error; ignore for now
 
 
