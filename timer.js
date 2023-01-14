@@ -1,8 +1,10 @@
 "use strict";
 
 (() => {
-// Hint to the user that timer inputs are numbers
-    const reDigits = /[\d\.]/;
+// Hint to the user that timer inputs are numbers.
+// Note that they can still input something invalid with multiple periods;
+// e.g. 123.312.1321234.12
+    const reDigits = /^\d*\.?\d*$/;
 
     const SHINY_TIMER_DEBUG = localStorage.getItem("shinyTimerDebug") === "true";
     const SHINY_TIMER_DEBUG_FAKE_KEY = "fake key for testing database error handling.\n";
@@ -19,26 +21,26 @@
         shiny_timer_debug_reload_count = +shiny_timer_debug_reload_count;
     }
 
-    var pClock;
-    var fieldHours, fieldMinutes, fieldSeconds;
+    let pClock;
+    let fieldHours, fieldMinutes, fieldSeconds;
     let timeFields;
-    var fieldDummyBorder;
-    var buttonStartPause; var buttonReset; var buttonTest;
-    var comboSounds;
-    let buttonSoundAdd; let fileSoundAdd; let textSoundAdd;
+    let fieldDummyBorder;
+    let buttonStartPause, buttonReset, buttonTest;
+    let comboSounds;
+    let buttonSoundAdd, fileSoundAdd, textSoundAdd;
     let buttonSoundRemove;
-    let buttonURL; let fieldURL;
+    let buttonURL, fieldURL;
 
     let intervalID;
 // hideSound() normally updates comboSounds.selected; forbid that during launchPlay().
     let launchPlayLock = false;
 
-    const DB_NAME = 'shiny-timer-sounds';
+    const DB_NAME = "shiny-timer-sounds";
     const DB_VERSION = 1;
-    const DB_STORE_NAME = 'sounds';
+    const DB_STORE_NAME = "sounds";
     let databasePromise;
 
-    var timer;
+    let timer;
     function makeTimer() {
         return {
             endTime: null,
@@ -67,22 +69,22 @@ That seems more robust at runtime, and also avoids hard-coding a WAV file,
  but also more error-prone to write,
  and also would need us to manually track if a sound should continue to play or not
  while we change comboSound.selectedIndex.*/
-    var sounds = {
-        "silent": new Audio(SILENT_WAV)
+    const sounds = {
+        silent: new Audio(SILENT_WAV)
     }
-    var defaultSounds = {"silent":true};
+    const defaultSounds = {silent:true};
 
     sounds["silent"].loop = true;
-    var currentSound = sounds["silent"];
+    let currentSound = sounds["silent"];
 
 /*
 Error function if a sound fails to load.
 Should remove option from comboSounds so user can't select it.
 Should not remove Audio from sounds,
- so onReset() will always be able to pause "all" sounds.*/
+ so onButtonReset() will always be able to pause "all" sounds.*/
     function hideSound(path) {
         if (!(SHINY_TIMER_DEBUG && path === SHINY_TIMER_DEBUG_BAD_AUDIO))
-            console.log("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
+            console.warn("Sound at path " + path + " failed to load. Hiding from combo-sounds...");
         for (let i = 0; i < comboSounds.length; i++) {
             if (comboSounds.options[i].value === path) {
                 if (!(SHINY_TIMER_DEBUG && path === SHINY_TIMER_DEBUG_BAD_AUDIO))
@@ -97,12 +99,12 @@ Should not remove Audio from sounds,
             }
         }
         if (!launchPlayLock)
-            updateCurrentSound();
+            onComboSoundsChange();
     }
 
     function fetchIDBKeys(database) {
         return new Promise(function (resolve, reject) {
-            let request = database.transaction([DB_STORE_NAME], "readonly").objectStore(DB_STORE_NAME).getAllKeys();
+            const request = database.transaction([DB_STORE_NAME], "readonly").objectStore(DB_STORE_NAME).getAllKeys();
             request.onsuccess = function (e) {
                 resolve(e.currentTarget.result);
             };
@@ -115,18 +117,18 @@ Should not remove Audio from sounds,
 
 // Returns a promise which will resolve when all sounds are loaded.
     function loadIDBSoundsFromKeys(database, keys) {
-        let transaction = database.transaction([DB_STORE_NAME], "readonly");
-        let store = transaction.objectStore(DB_STORE_NAME);
+        const transaction = database.transaction([DB_STORE_NAME], "readonly");
+        const store = transaction.objectStore(DB_STORE_NAME);
         if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             keys.push(SHINY_TIMER_DEBUG_FAKE_KEY);
             console.debug("Test note:     reject fake key: using keys:", keys);
         }
         return Promise.allSettled(keys.map(key => 
             new Promise(function (resolve, reject) {
-                let request = store.get(key);
+                const request = store.get(key);
                 request.onsuccess = function (event) {
                     try {
-                        let result = event.currentTarget.result;
+                        const result = event.currentTarget.result;
                         addNamedSound(result.id, getSound(result.file));
                         resolve(result.id);
                     } catch (error) {
@@ -151,13 +153,13 @@ Should not remove Audio from sounds,
 
 // Returns a promise which will resolve when all sounds are loaded.
     async function loadIDBSounds(database) {
-        let keys = await fetchIDBKeys(database);
+        const keys = await fetchIDBKeys(database);
         return loadIDBSoundsFromKeys(database, keys);
     }
 
     function loadDefaultSounds() {
-        for (let option of comboSounds) {
-            let path = option.value;
+        for (const option of comboSounds) {
+            const path = option.value;
             defaultSounds[path] = true;
 // "silent" sound is loaded immediately after <head> element;
 //  loadSounds isn't responsible for it.
@@ -177,55 +179,55 @@ Should not remove Audio from sounds,
             await testSilent();
         }
 
-        comboSounds = document.getElementById('combo-sounds');
+        comboSounds = document.getElementById("combo-sounds");
         loadDefaultSounds();
         databasePromise = fetchDatabase();
-        let loadingSoundsPromise = databasePromise.then(loadIDBSounds);
+        const loadingSoundsPromise = databasePromise.then(loadIDBSounds);
 
-        pClock = document.getElementById('p-clock');
+        pClock = document.getElementById("p-clock");
 
-        fieldHours = document.getElementById('field-hours');
-        fieldMinutes = document.getElementById('field-minutes');
-        fieldSeconds = document.getElementById('field-seconds');
+        fieldHours = document.getElementById("field-hours");
+        fieldMinutes = document.getElementById("field-minutes");
+        fieldSeconds = document.getElementById("field-seconds");
         timeFields = [fieldHours, fieldMinutes, fieldSeconds];
         fieldDummyBorder = document.getElementById("field-dummy-border");
 
-        buttonStartPause = document.getElementById('button-start-pause');
-        buttonReset = document.getElementById('button-reset');
-        buttonTest = document.getElementById('button-test');
+        buttonStartPause = document.getElementById("button-start-pause");
+        buttonReset = document.getElementById("button-reset");
+        buttonTest = document.getElementById("button-test");
 
-        buttonSoundAdd = document.getElementById('button-sound-add');
-        fileSoundAdd = document.getElementById('file-sound-add');
-        textSoundAdd = document.getElementById('text-sound-add');
+        buttonSoundAdd = document.getElementById("button-sound-add");
+        fileSoundAdd = document.getElementById("file-sound-add");
+        textSoundAdd = document.getElementById("text-sound-add");
         buttonSoundRemove = document.getElementById("button-sound-remove");
 
         buttonURL = document.getElementById("button-url");
         fieldURL = document.getElementById("field-url");
 
-        for (let f of timeFields)
+        for (const f of timeFields)
         {
-            f.addEventListener('keypress', onKeyPress);
-            f.addEventListener('keydown', onKeyDown);
+            f.addEventListener("beforeinput", onFieldBeforeInput);
+            f.addEventListener("keydown", onFieldKeyDown);
         }
 
-        buttonStartPause.addEventListener('click', onButtonStartPause);
-        buttonReset.addEventListener('click', onReset);
-        comboSounds.addEventListener('change', updateCurrentSound);
+        buttonStartPause.addEventListener("click", onButtonStartPause);
+        buttonReset.addEventListener("click", onButtonReset);
+        comboSounds.addEventListener("change", onComboSoundsChange);
 
-        fileSoundAdd.addEventListener('change', onFileSoundAddChange);
-        buttonSoundAdd.addEventListener('click', onButtonSoundAdd);
-        buttonSoundRemove.addEventListener('click', onButtonSoundRemove);
+        fileSoundAdd.addEventListener("change", onFileSoundAddChange);
+        buttonSoundAdd.addEventListener("click", onButtonSoundAdd);
+        buttonSoundRemove.addEventListener("click", onButtonSoundRemove);
 
         buttonURL.addEventListener("click", onButtonURL);
 
 // Form data may persist over reloads, so update all the boxes.
         onFileSoundAddChange();
-        updateCurrentSound();
+        onComboSoundsChange();
 
         if (SHINY_TIMER_DEBUG && window.shiny_timer_debug_reload_count === 2) {
             comboSounds.selectedIndex = 0;
             comboSounds.dispatchEvent(new Event("change"));
-// Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for onComboSoundsChange to be called.
             await new Promise(r => setTimeout(r, 1));
             await new Promise(r => setTimeout(r, 1));
             await launchPlay();
@@ -449,16 +451,16 @@ Should not remove Audio from sounds,
     }
 
     async function testSoundsAllLoad() {
-        let keysToCheck = Array.from(comboSounds.options).map(o => o.value);
+        const keysToCheck = Array.from(comboSounds.options).map(o => o.value);
         console.assert(
             keysToCheck.every(k => sounds[k] !== undefined),
             "Test failure:  sounds all load: some combo options are not associated with audios."
         );
 
-        for (let key of keysToCheck) {
+        for (const key of keysToCheck) {
             if (sounds[key] === undefined)
                 continue;
-            let audio = sounds[key];
+            const audio = sounds[key];
             try {
                 await audio.play();
                 await audio.pause();
@@ -486,10 +488,10 @@ Should not remove Audio from sounds,
         );
         comboSounds.selectedIndex = 12;
         comboSounds.dispatchEvent(new Event("change"));
-// Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for onComboSoundsChange to be called.
         await new Promise(r => setTimeout(r, 1));
         await new Promise(r => setTimeout(r, 1));
-        let expectedSound = sounds[comboSounds.value];
+        const expectedSound = sounds[comboSounds.value];
         console.assert(playingSounds().length === 1,
             "Test failure:  play switch: expected exactly one sound to play after change sound."
         );
@@ -511,12 +513,13 @@ Should not remove Audio from sounds,
         if (shiny_timer_debug_reload_count === 0) {
             console.debug("Test note:     sound add: First reload; create file and add.");
             localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
-// Borrowed from https://stackoverflow.com/a/38935990/6286797
-            let arr = SILENT_WAV.split(','),
-                mime = arr[0].match(/:(.*?);/)[1],
-                bstr = atob(arr[1]),
-                n = bstr.length,
-                u8arr = new Uint8Array(n);
+// Taken with modification from https://stackoverflow.com/a/38935990/6286797
+            const arr = SILENT_WAV.split(",");
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+
             while (n--) {
                 u8arr[n] = bstr.charCodeAt(n);
             }
@@ -526,7 +529,7 @@ Should not remove Audio from sounds,
             fileSoundAdd = {files:[new File([u8arr], SHINY_TIMER_DEBUG_SOUND_ADD, {type:mime})]};
             onFileSoundAddChange();
             await onButtonSoundAdd();
-            let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+            const sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
             try {
                 await sound.play();
             } catch (e) {
@@ -551,7 +554,7 @@ Should not remove Audio from sounds,
             console.debug("Test note:     add sound: Second reload; play file and discard.");
             localStorage.setItem("reloadCount", shiny_timer_debug_reload_count + 1);
 // Expect persistent storage to have test_silent_sound_name as a playable thing
-            let sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
+            const sound = sounds[SHINY_TIMER_DEBUG_SOUND_ADD];
             try {
                 await sound.play();
             } catch (e) {
@@ -563,7 +566,6 @@ Should not remove Audio from sounds,
                 console.assert(!(sound.paused), 'Test failure:  sound add: "silent" sound' +
                     " did not play."
                 );
-                console.log("Sound:", sound);
                 await sound.pause();
                 console.assert(comboSounds.options[0].value === SHINY_TIMER_DEBUG_SOUND_ADD,
                     "Test failure:  sound add: key string for test sound did not persist" +
@@ -572,7 +574,7 @@ Should not remove Audio from sounds,
 
                 comboSounds.selectedIndex = 0;
                 comboSounds.dispatchEvent(new Event("change"));
-// Wait two cycles for updateCurrentSound to be called.
+// Wait two cycles for onComboSoundsChange to be called.
                 await new Promise(r => setTimeout(r, 1));
                 await new Promise(r => setTimeout(r, 1));
                 await buttonSoundRemove.click();
@@ -596,8 +598,8 @@ Should not remove Audio from sounds,
     }
 
     function testBadAudio() {
-        let _comboSounds = document.getElementById("combo-sounds");
-        let newOption = document.createElement("option");
+        const _comboSounds = document.getElementById("combo-sounds");
+        const newOption = document.createElement("option");
         newOption.value = SHINY_TIMER_DEBUG_BAD_AUDIO
         newOption.appendChild(document.createTextNode(SHINY_TIMER_DEBUG_BAD_AUDIO));
         _comboSounds.prepend(newOption);
@@ -606,19 +608,19 @@ Should not remove Audio from sounds,
     }
 
     async function testSilent() {
-        console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be initially paused.");
+        console.assert(sounds["silent"].paused, 'Test failure:  expected "silent" to be initially paused.');
         try {
             await sounds["silent"].play();
         } catch (e) {
-            console.error("Test failure:  play 'silent' failed:", e);
+            console.error('Test failure:  play "silent" failed:', e);
         }
-        console.assert(!sounds["silent"].paused, "Test failure:  expected 'silent' to not be paused after playing it.");
+        console.assert(!sounds["silent"].paused, 'Test failure:  expected "silent" to not be paused after playing it.');
         try {
             await sounds["silent"].pause();
         } catch (e) {
-            console.error("Test failure:  pause 'silent' failed:", e);
+            console.error('Test failure:  pause "silent" failed:', e);
         }
-        console.assert(sounds["silent"].paused, "Test failure:  expected 'silent' to be paused after pausing it.");
+        console.assert(sounds["silent"].paused, 'Test failure:  expected "silent" to be paused after pausing it.');
         console.log("Test complete: silent sound sanity.");
     }
 
@@ -633,7 +635,7 @@ Should not remove Audio from sounds,
 
     function getOptionsIndex(selectedPath) {
         for (let i = 0; i < comboSounds.options.length; i++) {
-            let option = comboSounds.options[i];
+            const option = comboSounds.options[i];
             if (option.value === selectedPath) {
                 return i;
             }
@@ -653,11 +655,10 @@ Should not remove Audio from sounds,
 // Ok. This fn is a kludgy, stateful mess.
 // First select the sound, which is less coupled than the rest.
         if (!launchPlayLock) {
-            let selectedPath = parameters.get("selectedPath");
+            const selectedPath = parameters.get("selectedPath");
             if (selectedPath !== null) {
                 try {
-                    let selectedIndex = getOptionsIndex(selectedPath);
-                    console.log("Setting selectedIndex to " + selectedIndex);
+                    const selectedIndex = getOptionsIndex(selectedPath);
                     comboSounds.selectedIndex = selectedIndex;
                     comboSounds.dispatchEvent(new Event("change"));
                 } catch (e) {
@@ -666,9 +667,9 @@ Should not remove Audio from sounds,
             }
         }
 
-        let resetTime = parameters.get("resetTime");
-        if (resetTime !== null) {
-            resetTime = parseFloat(resetTime);
+        const resetTimeString = parameters.get("resetTime");
+        if (resetTimeString !== null) {
+            const resetTime = parseFloat(resetTimeString);
             resetTime = secondsToHoursMinutesSeconds(resetTime);
             timer.resetTime = resetTime;
 // The state stanza may invoke buttonStartPause.click(), and the fields will then
@@ -679,7 +680,7 @@ Should not remove Audio from sounds,
 
 // state parameter is handled by just faking a bunch of user inputs.
 // timeLeft stanza SHOULD be after state stanza, to override endTime set here.
-        let state = parameters.get("state");
+        const state = parameters.get("state");
         if (state !== null) {
             if (state === "wait_for_entry") {
             } else if (state === "running") {
@@ -702,9 +703,9 @@ Should not remove Audio from sounds,
         }
 
 // timeLeft should follow state stanza, to override it if e.g. state=rung&timeLeft=14
-        let timeLeft = parameters.get('timeLeft');
-        if (timeLeft !== null) {
-            timeLeft = parseInt(timeLeft);
+        const timeLeftString = parameters.get("timeLeft");
+        if (timeLeftString !== null) {
+            const timeLeft = parseInt(timeLeftString);
             timer.timeLeft = timeLeft;
             timer.endTime = Date.now() + timeLeft * 1000;
 // updateDisplay() should be called after this applyParameters anyway...
@@ -712,10 +713,10 @@ Should not remove Audio from sounds,
 
     }
 
-    function onButtonURL(e) {
+    function onButtonURL() {
 // URL has four fields: resetTime, selectedPath, state, and timeLeft.
-        let u = new URL(window.location);
-        let s = u.searchParams;
+        const u = new URL(window.location);
+        const s = u.searchParams;
         s.set("state", timer.state);
         s.set("resetTime", parseTime(timeFields));
         if (timer.timeLeft !== 0)
@@ -729,9 +730,9 @@ Should not remove Audio from sounds,
             return ["00", "00", "00"];
         seconds = Math.ceil(seconds);
         
-        var hours = Math.floor(seconds / 3600);
+        let hours = Math.floor(seconds / 3600);
         seconds -= hours * 3600;
-        var minutes = Math.floor(seconds / 60);
+        let minutes = Math.floor(seconds / 60);
         seconds -= minutes * 60;
         seconds = Math.floor(seconds)
 
@@ -760,16 +761,16 @@ Should not remove Audio from sounds,
                 }
             }
 
-            let candidateSounds = Array.from(comboSounds.options).map(o => [o.value, sounds[o.value]]);
-            for (let name_candidate of candidateSounds) {
-                let candidate = name_candidate[1];
+            const candidateSounds = Array.from(comboSounds.options).map(o => [o.value, sounds[o.value]]);
+            for (const name_candidate of candidateSounds) {
+                const candidate = name_candidate[1];
                 if (candidate) {
                     try {
                         currentSound = candidate;
                         currentSound.currentTime = 0;
                         await currentSound.play();
-                        let name = name_candidate[0];
-                        let i = getOptionsIndex(name);
+                        const name = name_candidate[0];
+                        const i = getOptionsIndex(name);
                         console.log("launchPlay: Selecting sound " + name + " at index " + i);
                         comboSounds.selectedIndex = i;
                         return;
@@ -805,11 +806,11 @@ Should not remove Audio from sounds,
 
 // Display time in the same text inputs used to input time.
         if (timer.state !== "wait_for_entry") {
-            let hms = secondsToHoursMinutesSeconds(timer.timeLeft);
+            const hms = secondsToHoursMinutesSeconds(timer.timeLeft);
 // Preserve user selection while updating each field.
             for (let i = 0; i < timeFields.length; i++) {
-                let f = timeFields[i];
-                let s = f.selectionStart; let e = f.selectionEnd;
+                const f = timeFields[i];
+                const s = f.selectionStart; const e = f.selectionEnd;
                 f.value = hms[i];
                 f.setSelectionRange(s, e);
             }
@@ -821,10 +822,9 @@ Should not remove Audio from sounds,
         updateDisplay();
     }
 
-    function updateCurrentSound() {
-        var shouldPlay = false;
+    function onComboSoundsChange() {
         if (currentSound) {
-            shouldPlay = !currentSound.paused;
+            var shouldPlay = !currentSound.paused;
             currentSound.pause();
         }
 
@@ -838,32 +838,35 @@ Should not remove Audio from sounds,
         }
     }
 
-    function onKeyPress(e) {
-// Forbid non-digits from being typed.
-// Note that the user can still paste non-numbers in!
-// Forbidding non-digits is only a hint.
-        console.log(e);
-        if (e.key === "Enter" ) {
-            buttonStartPause.click();
-        } else if (!reDigits.test(e.key)) {
-            e.preventDefault();
-        } else if (timer.state !== "wait_for_entry") {
-            onReset(e, false);
+    function onFieldBeforeInput(e) {
+// Forbid non-digits from being typed, as a hint that this box is numbers only.
+// beforeinput catches a variety of events; I think "data" is present
+//  iff we are changing the value in the field?
+        if ("data" in e && e.data !== null) {
+            if (!reDigits.test(e.data)) {
+                e.preventDefault();
+            } else if (timer.state !== "wait_for_entry") {
+                onButtonReset(e, false);
+            }
         }
     }
 
-    function onKeyDown(e) {
+    function onFieldKeyDown(e) {
 // If it's an arrow key, maybe jump from box to box.
-// I can't do this in onKeyPress since arrows don't fire keypress events.
-        let field = e.target;
-        let i = field.selectionStart;
+// I can't do this in onFieldBeforeInput since arrows don't fire beforeInput events.
+        const field = e.target;
+        const i = field.selectionStart;
         let targetField = null;
-        if (e.key === "ArrowLeft" && i === 0) {
+        console.log("KeyDown event", e);
+        if (e.key === "Enter" ) {
+            console.log("Clicking startpause")
+            buttonStartPause.click();
+        } else if (e.key === "ArrowLeft" && i === 0) {
             if (field === fieldMinutes) targetField = fieldHours;
             else if (field === fieldSeconds) targetField = fieldMinutes;
             else return;
             targetField.focus();
-            let last = targetField.value.length;
+            const last = targetField.value.length;
             targetField.setSelectionRange(last, last);
             e.preventDefault();
 
@@ -875,7 +878,7 @@ Should not remove Audio from sounds,
             targetField.setSelectionRange(0, 0);
             e.preventDefault();
         } else if ((e.key === "Backspace" || e.key === "Delete") && timer.state !== "wait_for_entry") {
-            onReset(e, false);
+            onButtonReset(e, false);
         }
     }
 
@@ -884,7 +887,7 @@ Should not remove Audio from sounds,
 // Use + to convert to number because for some incomprehenisble reason,
 //  "parseFloat" of empty string is NaN
             let maybeSeconds = 0;
-            for (let f of fields) {
+            for (const f of fields) {
                 maybeSeconds = maybeSeconds * 60 + (+f.value);
             }
 // I could have written something complicated to extract
@@ -907,7 +910,7 @@ Should not remove Audio from sounds,
         fieldSeconds.value = timer.resetTime[2];
     }
 
-    function onReset(e, shouldResetFields=true) {
+    function onButtonReset(e, shouldResetFields=true) {
         for (const key of Object.keys(sounds)) {
 // Hopefully, this undefined check is redundant.
             if (sounds[key]) { 
@@ -933,7 +936,7 @@ Should not remove Audio from sounds,
 // makeTimer() will set timer.state to "wait_for_entry"
         timer = makeTimer();
 // Hopefully redundant.
-        updateCurrentSound();
+        onComboSoundsChange();
         fieldDummyBorder.style.visibility = "visible";
     }
 
@@ -945,7 +948,7 @@ Should not remove Audio from sounds,
             ];
         }
         if (timer.state === "wait_for_entry" || timer.state === "paused") {
-            var offsetMilli = 1000 * timer.timeLeft;
+            const offsetMilli = 1000 * timer.timeLeft;
             timer.endTime = Date.now() + offsetMilli;
 
             timer.state = "running";
@@ -970,14 +973,14 @@ Should not remove Audio from sounds,
 
     function getMaxLength(a) {
         let longest = 0;
-        for (let element of a)
+        for (const element of a)
             if (element.length > longest)
                 longest = element.length;
         return longest;
     }
 
     function onFileSoundAddChange(e) {
-        let suggestedNames = Array.from(fileSoundAdd.files).map(f => f.name);
+        const suggestedNames = Array.from(fileSoundAdd.files).map(f => f.name);
         textSoundAdd.value = suggestedNames.join("\n");
 
         if (suggestedNames.length >= 1)
@@ -985,7 +988,7 @@ Should not remove Audio from sounds,
         else
             textSoundAdd.rows = 1;
 
-        let longest = getMaxLength(suggestedNames) + 1;
+        const longest = getMaxLength(suggestedNames) + 1;
         if (longest >= 20)
             textSoundAdd.cols = longest;
         else
@@ -998,7 +1001,7 @@ Should not remove Audio from sounds,
 
     function fetchDatabase() {
         return new Promise(function (resolve, reject) {
-            let databaseRequest = indexedDB.open(DB_NAME, DB_VERSION);
+            const databaseRequest = indexedDB.open(DB_NAME, DB_VERSION);
             databaseRequest.onsuccess = (e) => {
                 resolve(databaseRequest.result);
             };
@@ -1011,11 +1014,11 @@ Should not remove Audio from sounds,
 
             databaseRequest.onupgradeneeded = function (e) {
                 console.log("Upgrade needed (presumably also first run of database?");
-                let database = e.currentTarget.result;
+                const database = e.currentTarget.result;
                 if (!database.objectStoreNames.contains(DB_STORE_NAME))
                 {
                     console.log("Creating store " + DB_STORE_NAME);
-                    let store = database.createObjectStore(DB_STORE_NAME, {keyPath:"id", autoIncrement:true});
+                    database.createObjectStore(DB_STORE_NAME, {keyPath:"id", autoIncrement:true});
                 }
             };
         });
@@ -1026,8 +1029,7 @@ Should not remove Audio from sounds,
     }
 
     function addNamedSound(name, sound) {
-        console.debug("addNamedSound: ", name, sound);
-        let option = document.createElement("option");
+        const option = document.createElement("option");
         option.appendChild(document.createTextNode(name));
         option.value = name;
 
@@ -1037,8 +1039,8 @@ Should not remove Audio from sounds,
     }
 
     async function onButtonSoundAdd(e) {
-        let names = textSoundAdd.value.split('\n');
-        let files = fileSoundAdd.files;
+        const names = textSoundAdd.value.split("\n");
+        const files = fileSoundAdd.files;
         if (files.length === 0) {
             alert("Error: No files selected to add. Click the browse button to add a file.");
             return;
@@ -1053,10 +1055,10 @@ Should not remove Audio from sounds,
             return;
         }
 
-        let checkedSounds = {};
+        const checkedSounds = {};
         for (let i = 0; i < names.length; i++) {
-            let file = files[i];
-            let name = names[i];
+            const file = files[i];
+            const name = names[i];
             if (name in sounds || name in checkedSounds) {
                 alert(
                     'Error: Duplicate sound name "' + name + '".\n' +
@@ -1065,7 +1067,7 @@ Should not remove Audio from sounds,
                 return;
             }
 
-            let sound = getSound(file);
+            const sound = getSound(file);
             try {
                 await sound.play();
                 await sound.pause();
@@ -1082,20 +1084,19 @@ Should not remove Audio from sounds,
 
 // Iterate in reverse order,
 //  so the order in the combobox is the same as in the textarea.
-        let objectStore = undefined;
         try {
-            objectStore = await fetchObjectStore("readwrite");
+            var objectStore = await fetchObjectStore("readwrite");
         } catch (e) {
             console.warn("buttonSoundAdd: Could not fetch IndexedDB to add sound persistently.");
         }
 
         for (let i = names.length - 1; i >= 0; i--) {
-            let name = names[i];
-            let sound = checkedSounds[name];
+            const name = names[i];
+            const sound = checkedSounds[name];
             if (objectStore !== undefined) {
-                let file = files[i];
-                let object = {id:name, file:file};
-                let request = objectStore.add(object);
+                const file = files[i];
+                const object = {id:name, file:file};
+                const request = objectStore.add(object);
                 request.onerror = function (e) {
 // Note if people add sounds from multiple tabs we'll get duplicate key error.
                     console.error(e);
@@ -1124,7 +1125,7 @@ Should not remove Audio from sounds,
             return;
         }
 
-        let i = comboSounds.selectedIndex;
+        const i = comboSounds.selectedIndex;
         if (!launchPlayLock) {
             if (i + 1 < comboSounds.options.length)
                 comboSounds.selectedIndex = i + 1;
@@ -1133,17 +1134,15 @@ Should not remove Audio from sounds,
             comboSounds.dispatchEvent(new Event("change"));
         }
 
-        let option = comboSounds.options[i];
-        console.log("Discarding option " + option.value);
+        const option = comboSounds.options[i];
         comboSounds.remove(i);
 
-        let id = option.value;
+        const id = option.value;
 // Hopefully redundant.
         sounds[id].pause();
 // Hopefully free resources used by that sound.
         delete sounds[id];
         if (!(id in defaultSounds)) {
-            console.log("Deleting from IndexedDB (persistent storage)...");
             fetchObjectStore("readwrite").then(function (objectStore) {
                 objectStore.delete(id).onerror = function (e) {
                     console.error(e);
@@ -1153,7 +1152,7 @@ Should not remove Audio from sounds,
 
     }
 
-    window.addEventListener('load', init, false);
+    window.addEventListener("load", init, false);
 })()
 
 

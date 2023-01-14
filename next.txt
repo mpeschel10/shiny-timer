@@ -1,10 +1,5 @@
 
 Next:
-make variable names more consistent
-    rename "wait-for-entry" something descriptive
-    update names e.g. onReset -> onButtonReset and the keypress/keydown and so on
-    change all ' to "
-    clean up logging
 make the page pretty
     Make error messages nice (not just alerts)
     field-dummy-border unstable; replace with normal border (span?)
@@ -79,5 +74,6 @@ Proper solution for detecting when the user is trying to change the inputs for t
 test debian copyright notice (get linter?)
 handle when quota is exceeded
     can't trigger the error; ignore for now
-
+why am I mucking around with firing events e.g. comboSounds.selectedIndex = 12; comboSounds.disaptchEvent("change");. Waste of code. Just call onComboSoundsChange directly.
+rename "wait-for-entry" something descriptive
 
