@@ -1,11 +1,11 @@
 
 Next:
 make the page pretty
+    field-dummy-border unstable; replace with normal border (span?)
     move current time to bottom, smaller text
     ribbon along bottom: current time, copyright, github link
     ribbon along top: home > webtimer
     center, larger text
-    field-dummy-border unstable; replace with normal border (span?)
     Make error messages nice (not just alerts)
     Put the sound managment stuff in a dialogue or box or something
     colors?

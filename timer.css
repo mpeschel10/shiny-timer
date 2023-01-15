@@ -4,6 +4,11 @@
     width: 2em;
 }
 
+#div-field-pincher {
+    border: 1px solid grey;
+    border-radius: 2px;
+}
+
 #field-hours {
     margin-left: 1px; /* this leftmost field will overlap the dummy border field if no margin-left. */
 }
@@ -15,14 +20,6 @@ display: inline-block so it fits tightly to the fields, allowing dummy-border wi
     display: inline-block;
     position: relative;
     margin-bottom: 2px;
-}
-
-#field-dummy-border {
-    position: absolute;
-    z-index: -1;
-    left: 0;
-    top: 1px;
-    width: 100%;
 }
 
 #button-start-pause {

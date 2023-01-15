@@ -12,6 +12,7 @@
     const SHINY_TIMER_DEBUG_SOUND_ADD = "fake key for testing Audio persistence.";
 
     const SILENT_WAV = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
+    const DIV_FIELD_PINCHER_BORDER = "1px solid grey";
 
     if (SHINY_TIMER_DEBUG) {
         window.shiny_timer_debug_reload_count = localStorage.getItem("reloadCount");
@@ -24,7 +25,7 @@
     let pClock;
     let fieldHours, fieldMinutes, fieldSeconds;
     let timeFields;
-    let fieldDummyBorder;
+    let divFieldPincher;
     let buttonStartPause, buttonReset, buttonTest;
     let comboSounds;
     let buttonSoundAdd, fileSoundAdd, textSoundAdd;
@@ -190,7 +191,7 @@ Should not remove Audio from sounds,
         fieldMinutes = document.getElementById("field-minutes");
         fieldSeconds = document.getElementById("field-seconds");
         timeFields = [fieldHours, fieldMinutes, fieldSeconds];
-        fieldDummyBorder = document.getElementById("field-dummy-border");
+        divFieldPincher = document.getElementById("div-field-pincher");
 
         buttonStartPause = document.getElementById("button-start-pause");
         buttonReset = document.getElementById("button-reset");
@@ -937,7 +938,7 @@ Should not remove Audio from sounds,
         timer = makeTimer();
 // Hopefully redundant.
         onComboSoundsChange();
-        fieldDummyBorder.style.visibility = "visible";
+        divFieldPincher.style.border = DIV_FIELD_PINCHER_BORDER;
     }
 
     function onButtonStartPause() {
@@ -953,20 +954,20 @@ Should not remove Audio from sounds,
 
             timer.state = "running";
             buttonStartPause.value = "Pause";
-            fieldDummyBorder.style.visibility = "hidden";
+            divFieldPincher.style.border = "none";
 
             updateDisplay();
         } else if (timer.state === "running") {
             updateTimer();
             timer.state = "paused";
-            fieldDummyBorder.style.visibility = "visible";
+            divFieldPincher.style.visibility = DIV_FIELD_PINCHER_BORDER;
 
             buttonStartPause.value = "Start";
         } else if (timer.state === "ringing") {
             timer.state = "rung";
             if (currentSound)
                 currentSound.pause();
-            fieldDummyBorder.style.visibility = "visible";
+            divFieldPincher.style.visibility = DIV_FIELD_PINCHER_BORDER;
         }
 // else if (timer.state === "rung")
     }
