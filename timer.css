@@ -23,5 +23,14 @@ display: inline-block so it fits tightly to the fields, allowing dummy-border wi
 }
 
 #button-start-pause {
-    width: 4em; /* Longest label: "pause" */
+    width: 6ch; /* Longest label: "pause" */
+}
+
+#div-footer {
+    font-size: 0.75em;
+    text-align: center;
+}
+
+.footer-link {
+    display: block;
 }

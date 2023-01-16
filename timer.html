@@ -9,7 +9,7 @@
 </head>
 <body>
     <p><a href="/">Home</a> / timer app</p>
-    <form>
+    <form id="form-timer">
         <div id="div-field-pincher">
             <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
             <label for="field-hours">hours, </label>
@@ -66,9 +66,12 @@
         <input id="field-url" name="field-url" type="text"></input>
     </form>
 
-    <p id="p-clock">You must have JavaScript running to use this page.</p>
     <br>
-    <a href="copyright">Copyright Notice</a> <a href="https://github.com/mpeschel10/shiny-timer">Source</a>
+    <div id="div-footer">
+    <p id="p-clock">You must have JavaScript running to use this page.</p>
+    <a class="footer-link" href="copyright">Copyright Notice</a>
+    <a class="footer-link" href="https://github.com/mpeschel10/shiny-timer">Source</a>
+    </div>
 </body>
 </html>
 
