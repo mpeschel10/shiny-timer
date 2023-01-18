@@ -31,6 +31,3 @@ display: inline-block so it fits tightly to the fields, allowing dummy-border wi
     text-align: center;
 }
 
-.footer-link {
-    display: block;
-}
