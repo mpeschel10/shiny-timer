@@ -1,3 +1,15 @@
+* {
+    font-family: sans-serif;
+}
+
+body {
+    background-color: gainsboro;
+}
+
+#form-timer {
+    background-color: white;
+}
+
 .field-borderless {
     border: none;
     text-align: right;
