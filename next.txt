@@ -1,8 +1,10 @@
 
 Next:
+FIX THE URL PARAMS THING
 make the page pretty
     ribbon along bottom: current time, copyright, github link
     ribbon along top: home > webtimer
+    make timer edit boxes expand if there's a ton of text in them
     center, larger text
     Make error messages nice (not just alerts)
     Put the sound managment stuff in a dialogue or box or something
@@ -10,7 +12,9 @@ make the page pretty
     get T's feedback
     ribbon?
     instead of zero-padded two digits display, just one digit?
+    make minutes, seconds, hours singular as appropriate
 remove console.log stuff again
+add sound bird song, bugs/meadow noise
 warn user on making a url for state=ringing that autoplay may be forbidden
 CentOS best practices email
     Forbid .. "directory traversal attack"
