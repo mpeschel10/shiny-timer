@@ -1,6 +1,5 @@
 *.wav
 *.mp3
-push_to_github.py
 *.swp
 *.swo
 crockford
