@@ -1,5 +1,13 @@
+Done:
+Move everything to /serve directory for later cleanup.
 
 Next:
+
+Proper e2e testing
+This is a static site ("web app"). Route /server/ dir through nginx instead of custom node.js server.
+    Problem is I don't want to set up nginx instances locally. Or maybe that's easy? nginx -c local.conf
+Remove .ogg from git; replace with .wav.
+    I'm using git for both deployment and versioning; that's bad
 FIX THE URL PARAMS THING
 make the page pretty
     ribbon along bottom: current time, copyright, github link

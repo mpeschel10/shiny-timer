@@ -10,8 +10,11 @@ const port = 22608;
 http.createServer(function (req, res) {
   console.log(`${req.method} ${req.url}`);
 
-  const parsedUrl = url.parse(req.url);
-  let pathname = `.${parsedUrl.pathname}`;
+  let parsedUrl = url.parse(req.url);
+  if (req.url === '/') {
+    parsedUrl = url.parse('/timer.html');
+  }
+  let pathname = `serve${parsedUrl.pathname}`;
   const ext = path.parse(pathname).ext;
   const map = {
     '.ico': 'image/x-icon',
