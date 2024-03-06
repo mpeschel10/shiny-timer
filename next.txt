@@ -35,6 +35,7 @@ duplicate sounds names are apparently permitted somehow? E.g. add "Alarm (digita
 
 
 Later:
+Hook up with music server/spotify somehow so people can have easier choice for playing music than just "upload everything manually". Maybe also allow fetching mp3s from the web?
 don't be a purist. Just use mp3s. I'm sorry, ogg...
 misc. accessibility?
     aria roles - label button-start-pause as switch functionality.
