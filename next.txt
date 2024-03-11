@@ -4,6 +4,7 @@ Move everything to /serve directory for later cleanup.
 Next:
 
 Proper e2e testing
+Add "choose random" sound.
 This is a static site ("web app"). Route /server/ dir through nginx instead of custom node.js server.
     Problem is I don't want to set up nginx instances locally. Or maybe that's easy? nginx -c local.conf
 Remove .ogg from git; replace with .wav.

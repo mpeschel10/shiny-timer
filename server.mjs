@@ -5,7 +5,7 @@ import url from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const port = 22608;
+const port = process.env.PORT ?? 22608;
 
 http.createServer(function (req, res) {
   console.log(`${req.method} ${req.url}`);
