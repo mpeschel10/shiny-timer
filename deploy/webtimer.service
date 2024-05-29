@@ -3,7 +3,8 @@ Description=Serves a timer web app on port 22608
 
 [Service]
 WorkingDirectory=/opt/webtimer
-ExecStart=. .env && node server.mjs
+EnvironmentFile=/opt/webtimer/.env
+ExecStart=node server.mjs
 
 [Install]
 WantedBy=multi-user.target
