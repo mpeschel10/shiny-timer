@@ -11,7 +11,7 @@ http.createServer(function (req, res) {
   console.log(`${req.method} ${req.url}`);
 
   let parsedUrl = url.parse(req.url);
-  if (req.url === '/') {
+  if (parsedUrl.pathname === '/') {
     parsedUrl = url.parse('/timer.html');
   }
   let pathname = `serve${parsedUrl.pathname}`;
