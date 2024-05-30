@@ -2,8 +2,11 @@ Done:
 Move everything to /serve directory for later cleanup.
 
 Next:
-
+Move copyright to serve dir
 Proper e2e testing
+Some kind of configurable interface with a "sound server" idk
+Add sound rename sound should drop the .ogg/.mp3/whatever by default.
+    And any leading numbers, artist name, album name if present in .mp3 metadata.
 Add "choose random" sound.
 This is a static site ("web app"). Route /server/ dir through nginx instead of custom node.js server.
     Problem is I don't want to set up nginx instances locally. Or maybe that's easy? nginx -c local.conf
@@ -33,7 +36,8 @@ Run tests:
     Start new window with no database. Expect "Upgrade needed", "Creating store"
 compress that horrible long WET state test
 duplicate sounds names are apparently permitted somehow? E.g. add "Alarm (digital)". weird.
-
+Add button to copy url for timer
+Add button to "copy url for running timer"
 
 Later:
 Hook up with music server/spotify somehow so people can have easier choice for playing music than just "upload everything manually". Maybe also allow fetching mp3s from the web?

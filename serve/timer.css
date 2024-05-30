@@ -4,6 +4,9 @@
 
 body {
     background-color: gainsboro;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #form-timer {

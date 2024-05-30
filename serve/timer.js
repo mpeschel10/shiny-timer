@@ -670,7 +670,7 @@ Should not remove Audio from sounds,
 
         const resetTimeString = parameters.get("resetTime");
         if (resetTimeString !== null) {
-            const resetTime = parseFloat(resetTimeString);
+            let resetTime = parseFloat(resetTimeString);
             resetTime = secondsToHoursMinutesSeconds(resetTime);
             timer.resetTime = resetTime;
 // The state stanza may invoke buttonStartPause.click(), and the fields will then
