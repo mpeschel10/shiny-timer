@@ -8,7 +8,7 @@ function main {
     rsync -av --delete-excluded ./ \
         --include "serve/***" \
         --include "deploy/***" \
-        --include server.mjs --include copyright --include .env \
+        --include server.mjs --include .env \
         --exclude "/**" "$REMOTE_STAGING"
 }
 
