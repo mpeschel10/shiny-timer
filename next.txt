@@ -1,8 +1,10 @@
 Done:
 Move everything to /serve directory for later cleanup.
+Move copyright to serve dir
+Note field.
 
 Next:
-Move copyright to serve dir
+More sounds somehow
 Proper e2e testing
 Some kind of configurable interface with a "sound server" idk
 Add sound rename sound should drop the .ogg/.mp3/whatever by default.

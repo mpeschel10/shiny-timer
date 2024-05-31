@@ -9,62 +9,68 @@
 </head>
 <body>
     <p><a href="/">Home</a> / timer app</p>
-    <form id="form-timer">
-        <div id="div-field-pincher">
-            <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
-            <label for="field-hours">hours, </label>
-
-            <input id="field-minutes" class="field-borderless" name="field-minutes" type="tel" pattern="\d*\.?\d*" value="5" placeholder="00"></input>
-            <label for="field-minutes">minutes, </label>
-
-            <input id="field-seconds" class="field-borderless" name="field-seconds" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
-            <label for="field-seconds">seconds</label>
-         </div>
-
-        <br>
-        <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
-        <input id="button-reset" name="button-reset" type="button" value="Reset"></input>
-
-        <br>
-        <label for="combo-sounds">Alarm sound:</label>
-        <select id="combo-sounds" name="combo-sounds">
-            <option value="brrrring-loop.ogg">Alarm (Analog)</option>
-            <option selected="selected" value="bbbbeep-loop.ogg">Alarm (Digital)</option>
-            <option value="church-bells-loop.ogg">Church Bells</option>
-            <option value="slow-bell-loop.ogg">Slow Bell</option>
-            <option value="westminster-loop.ogg">Westminster Bell</option>
-            <option value="wind-chimes-many-loop.ogg">Many Wind Chimes</option>
-            <option value="wind-chimes-simple-loop.ogg">Simple Wind Chimes</option>
-            <option value="crickets-loop.ogg">Crickets</option>
-            <option value="fireworks-loop.ogg">Fireworks</option>
-            <option value="car-alarm-loop.ogg">Car Alarm at 3:00 A.M.</option>
-            <option value="lofi-strum-loop.ogg">Lo-Fi Strum</option>
-            <option value="lofi-beat-loop.ogg">Lo-Fi Beat</option>
-            <option value="music-box-ducks-loop.ogg">Music Box (Ducks)</option>
-            <option value="music-box-squeaky-loop.ogg">Music Box (Squeaky)</option>
-            <option value="music-box-wiegenlied-loop.ogg">Music Box (Wiegenlied)</option>
-            <option value="piano-cat-loop.ogg">Piano (Cat)</option>
-            <option value="piano-mouse-loop.ogg">Piano (Mouse)</option>
-            <option value="piano-fly-loop.ogg">Piano (Fly)</option>
-            <option value="piano-ringtone-loop.ogg">Piano (Ringtone)</option>
-            <option value="silent">Silent</option>
-        </select>
-
-        <br>
-        <label for="file-sound-add">Add a sound:</label>
-        <input id="file-sound-add" name="file-sound-add" type="file" multiple></input>
-        <label for="text-sound-add">Name of sound:</label>
-        <textarea id="text-sound-add" name="text-sound-add" rows="1" placeholder="Choose a file first."></textarea>
-        <input id="button-sound-add" type="button" value="Add the sound"></input>
-
-        <br>
-        <input id="button-sound-remove" type="button" value="Discard Current Sound"></input>
-
-        <br>
-        <input id="button-url" type="button" value="Make Url to Save This Timer"></input>
-        <label for="field-url">Saved timer URL:</label>
-        <input id="field-url" name="field-url" type="text"></input>
-    </form>
+    <div style="display:flex; gap: 1rem;">
+        <div style="display:flex; flex-direction: column; justify-content: start;">
+            <h4 style="flex-shrink: 1; margin-top: 0px; margin-bottom: 0px;">Notes:</h4>
+            <textarea id="textarea-note" style="flex-grow: 1;"></textarea>
+        </div>
+        <form id="form-timer">
+            <div id="div-field-pincher">
+                <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
+                <label for="field-hours">hours, </label>
+    
+                <input id="field-minutes" class="field-borderless" name="field-minutes" type="tel" pattern="\d*\.?\d*" value="5" placeholder="00"></input>
+                <label for="field-minutes">minutes, </label>
+    
+                <input id="field-seconds" class="field-borderless" name="field-seconds" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
+                <label for="field-seconds">seconds</label>
+             </div>
+    
+            <br>
+            <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
+            <input id="button-reset" name="button-reset" type="button" value="Reset"></input>
+    
+            <br>
+            <label for="combo-sounds">Alarm sound:</label>
+            <select id="combo-sounds" name="combo-sounds">
+                <option value="brrrring-loop.ogg">Alarm (Analog)</option>
+                <option selected="selected" value="bbbbeep-loop.ogg">Alarm (Digital)</option>
+                <option value="church-bells-loop.ogg">Church Bells</option>
+                <option value="slow-bell-loop.ogg">Slow Bell</option>
+                <option value="westminster-loop.ogg">Westminster Bell</option>
+                <option value="wind-chimes-many-loop.ogg">Many Wind Chimes</option>
+                <option value="wind-chimes-simple-loop.ogg">Simple Wind Chimes</option>
+                <option value="crickets-loop.ogg">Crickets</option>
+                <option value="fireworks-loop.ogg">Fireworks</option>
+                <option value="car-alarm-loop.ogg">Car Alarm at 3:00 A.M.</option>
+                <option value="lofi-strum-loop.ogg">Lo-Fi Strum</option>
+                <option value="lofi-beat-loop.ogg">Lo-Fi Beat</option>
+                <option value="music-box-ducks-loop.ogg">Music Box (Ducks)</option>
+                <option value="music-box-squeaky-loop.ogg">Music Box (Squeaky)</option>
+                <option value="music-box-wiegenlied-loop.ogg">Music Box (Wiegenlied)</option>
+                <option value="piano-cat-loop.ogg">Piano (Cat)</option>
+                <option value="piano-mouse-loop.ogg">Piano (Mouse)</option>
+                <option value="piano-fly-loop.ogg">Piano (Fly)</option>
+                <option value="piano-ringtone-loop.ogg">Piano (Ringtone)</option>
+                <option value="silent">Silent</option>
+            </select>
+    
+            <br>
+            <label for="file-sound-add">Add a sound:</label>
+            <input id="file-sound-add" name="file-sound-add" type="file" multiple></input>
+            <label for="text-sound-add">Name of sound:</label>
+            <textarea id="text-sound-add" name="text-sound-add" rows="1" placeholder="Choose a file first."></textarea>
+            <input id="button-sound-add" type="button" value="Add the sound"></input>
+    
+            <br>
+            <input id="button-sound-remove" type="button" value="Discard Current Sound"></input>
+    
+            <br>
+            <input id="button-url" type="button" value="Make Url to Save This Timer"></input>
+            <label for="field-url">Saved timer URL:</label>
+            <input id="field-url" name="field-url" type="text"></input>
+        </form>
+    </div>
 
     <br>
     <div id="div-footer">
