@@ -1,34 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="timer.css">
     <link rel="shortcut icon" href="icons/clock.png">
     <script src="timer.js"></script>
     <title>Timer app</title>
 </head>
 <body>
-    <p><a href="/">Home</a> / timer app</p>
-    <div style="display:flex; gap: 1rem;">
-        <div style="display:flex; flex-direction: column; justify-content: start;">
-            <h4 style="flex-shrink: 1; margin-top: 0px; margin-bottom: 0px;">Notes:</h4>
-            <textarea id="textarea-note" style="flex-grow: 1;"></textarea>
-        </div>
+    <p><a href="/">Home</a> / Timer app</p>
+        <div style="display:flex; flex-direction: column; gap: 0.25rem;">
+
+        <input id="field-title" style="width: 100%; border: none; padding: 0px; font-size: 1.25rem; background-color: transparent;" name="field-title" value="Timer app">
         <form id="form-timer">
             <div id="div-field-pincher">
-                <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
+                <input id="field-hours" class="field-borderless" name="field-duration" type="tel" pattern="\d*\.?\d*" value="" placeholder="00">
                 <label for="field-hours">hours, </label>
     
-                <input id="field-minutes" class="field-borderless" name="field-minutes" type="tel" pattern="\d*\.?\d*" value="5" placeholder="00"></input>
+                <input id="field-minutes" class="field-borderless" name="field-minutes" type="tel" pattern="\d*\.?\d*" value="5" placeholder="00">
                 <label for="field-minutes">minutes, </label>
     
-                <input id="field-seconds" class="field-borderless" name="field-seconds" type="tel" pattern="\d*\.?\d*" value="" placeholder="00"></input>
+                <input id="field-seconds" class="field-borderless" name="field-seconds" type="tel" pattern="\d*\.?\d*" value="" placeholder="00">
                 <label for="field-seconds">seconds</label>
              </div>
     
             <br>
-            <input id="button-start-pause" name="button-start-pause" type="button" value="Start"></input>
-            <input id="button-reset" name="button-reset" type="button" value="Reset"></input>
+            <input id="button-start-pause" name="button-start-pause" type="button" value="Start">
+            <input id="button-reset" name="button-reset" type="button" value="Reset">
     
             <br>
             <label for="combo-sounds">Alarm sound:</label>

@@ -4,7 +4,17 @@ Move copyright to serve dir
 Note field.
 
 Next:
+Note field should actually be title field.
+Why doesn't timer ring when window is not focused/interacted with on Edge, even with "autoplay" turned on?
+Add checkbox for "stop playing after one cycle"
+    Make checkbox part of saveable url
+Make title part of saveable url
 More sounds somehow
+    Jellyfin integration
+    YouTube integration
+    Point to any exposed mp3/whatever file on the internet
+
+Add error message for if user opens url for running timer and does not have autoplay enabled.
 Proper e2e testing
 Some kind of configurable interface with a "sound server" idk
 Add sound rename sound should drop the .ogg/.mp3/whatever by default.
