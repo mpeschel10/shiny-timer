@@ -2,9 +2,11 @@ Done:
 Move everything to /serve directory for later cleanup.
 Move copyright to serve dir
 Note field.
+Note field should actually be title field.
 
 Next:
-Note field should actually be title field.
+Add selenium test.
+Interface for setting audio etc. looks kinda garbo
 Why doesn't timer ring when window is not focused/interacted with on Edge, even with "autoplay" turned on?
 Add checkbox for "stop playing after one cycle"
     Make checkbox part of saveable url
@@ -13,7 +15,6 @@ More sounds somehow
     Jellyfin integration
     YouTube integration
     Point to any exposed mp3/whatever file on the internet
-
 Add error message for if user opens url for running timer and does not have autoplay enabled.
 Proper e2e testing
 Some kind of configurable interface with a "sound server" idk
@@ -50,6 +51,7 @@ compress that horrible long WET state test
 duplicate sounds names are apparently permitted somehow? E.g. add "Alarm (digital)". weird.
 Add button to copy url for timer
 Add button to "copy url for running timer"
+More sensible tab behavior for note field, somehow? idk how to make things better.
 
 Later:
 Hook up with music server/spotify somehow so people can have easier choice for playing music than just "upload everything manually". Maybe also allow fetching mp3s from the web?

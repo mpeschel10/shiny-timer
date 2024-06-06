@@ -1,5 +1,8 @@
 "use strict";
 
+import { syncTitleWith } from "./modules/title-input.mjs";
+
+
 (() => {
 // Hint to the user that timer inputs are numbers.
 // Note that they can still input something invalid with multiple periods;
@@ -246,6 +249,8 @@ Should not remove Audio from sounds,
 // Update clock and show urlParameters immediately on page load
         update();
         intervalID = setInterval(update, 500);
+
+        syncTitleWith(document.getElementById('field-title'));
 
         if (SHINY_TIMER_DEBUG) {
             await testSoundAdd();
@@ -1155,9 +1160,3 @@ Should not remove Audio from sounds,
 
     window.addEventListener("load", init, false);
 })()
-
-
-
-
-
-
